@@ -57,8 +57,8 @@ const assignmentInfo = document.getElementById('assignmentInfo');
 // Anpassung: Verwende einen case-insensitive regulären Ausdruck
 const assignmentSuffix = assignmentId.replace(/^assignment[_-]?/i, '');
 
-// Setze den Text auf 'Textsorte: {Suffix}'
-assignmentInfo.textContent = assignmentSuffix ? `Textsorte: ${assignmentSuffix}` : 'Textsorte';
+// Setze den Text auf 'Aufgabe: {Suffix}'
+assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}`;
 
 // Initialisiere den Quill-Editor
 const quill = new Quill('#answerBox', {
@@ -83,8 +83,8 @@ const saveIndicator = document.getElementById('saveIndicator'); // Save Indicato
 function displaySavedAnswer(content) {
     // Kombiniere parentTitle und assignmentSuffix, falls verfügbar
     const titleText = parentTitle
-        ? `${parentTitle}\nTextsorte: ${assignmentSuffix}`
-        : `Textsorte: ${assignmentSuffix}`;
+        ? `${parentTitle}\nAufgabe: ${assignmentSuffix}`
+        : `Aufgabe: ${assignmentSuffix}`;
     savedAssignmentTitle.textContent = titleText;
     // Verwenden Sie innerHTML, um die Formatierung beizubehalten
     savedAnswer.innerHTML = content;
@@ -210,8 +210,8 @@ document.getElementById("downloadAllBtn").addEventListener('click', function() {
 
     // Kombiniere parentTitle und assignmentSuffix für den Titel
     const titleText = parentTitle
-        ? `${parentTitle} - Textsorte: ${assignmentSuffix}`
-        : `Textsorte: ${assignmentSuffix}`;
+        ? `${parentTitle} - Aufgabe: ${assignmentSuffix}`
+        : `Aufgabe: ${assignmentSuffix}`;
 
     // Nutze die vorhandene Funktion zum Drucken einer einzelnen Antwort
     printSingleAnswer(titleText, savedText);
@@ -242,7 +242,7 @@ document.getElementById("printAllBtn").addEventListener('click', function() {
         if(text) {
             const assignmentIdMatch = assignmentIdKey.match(/^boxsuk-assignment[_-]?(.+)$/);
             const assignmentIdClean = assignmentIdMatch ? assignmentIdMatch[1] : assignmentIdKey;
-            const title = `Textsorte ${assignmentIdClean}`;
+            const title = `Aufgabe ${assignmentIdClean}`;
             allContent += `<h3>${title}</h3>`;
             allContent += `<div>${text}</div>`;
             allContent += `<hr>`;
@@ -319,7 +319,7 @@ function loadAllAnswers() {
             const assignmentIdClean = assignmentIdMatch ? assignmentIdMatch[1] : assignmentIdKey;
 
             const title = document.createElement("h3");
-            title.textContent = `Textsorte ${assignmentIdClean}`;
+            title.textContent = `Aufgabe ${assignmentIdClean}`;
             draftDiv.appendChild(title);
 
             const answerDiv = document.createElement("div");
@@ -351,7 +351,7 @@ function loadAllAnswers() {
                 const tempDivPrint = document.createElement('div');
                 tempDivPrint.innerHTML = text;
                 const plainTextPrint = tempDivPrint.innerHTML; // Verwenden Sie innerHTML für Formatierungen
-                printSingleAnswer(`Textsorte ${assignmentIdClean}`, plainTextPrint);
+                printSingleAnswer(`Aufgabe ${assignmentIdClean}`, plainTextPrint);
             });
             buttonGroup.appendChild(printBtn);
             // Ende Druck-Button
