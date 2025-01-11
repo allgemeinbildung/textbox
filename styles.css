@@ -25,7 +25,7 @@ body {
 }
 
 .quill-editor {
-    height: 400px; /* Angepasst für ca. 20 Zeilen */
+    height: 250px; /* Angepasst für ca. 20 Zeilen */
     margin-bottom: 10px;
     background-color: var(--editor-background);
     border: 1px solid var(--border-color);
