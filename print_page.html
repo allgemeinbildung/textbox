@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Alle Antworten drucken / Als PDF speichern</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50; /* Grün */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049; /* Dunkleres Grün beim Hover */
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Alle Gespeicherten Antworten Drucken</h1>
+        <button id="printAllBtn">Alle Antworten drucken / Als PDF speichern</button>
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        // Funktion zum Abrufen aller gespeicherten Antworten
+        function getAllSavedAnswers() {
+            const STORAGE_PREFIX = 'boxsuk-assignment_'; // Stellen Sie sicher, dass dies mit Ihrem Präfix übereinstimmt
+            const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_PREFIX));
+            const answers = [];
+
+            storageKeys.forEach(key => {
+                const htmlContent = localStorage.getItem(key);
+                if (htmlContent) {
+                    const assignmentId = key.replace(STORAGE_PREFIX, '');
+                    answers.push({
+                        id: assignmentId,
+                        content: htmlContent
+                    });
+                }
+            });
+
+            return answers;
+        }
+
+        // Funktion zum Öffnen des Druckdialogs mit allen Antworten
+        function printAllAnswers() {
+            const answers = getAllSavedAnswers();
+            const messageEl = document.getElementById('message');
+
+            if (answers.length === 0) {
+                messageEl.textContent = "Keine gespeicherten Antworten gefunden.";
+                return;
+            }
+
+            // Aufbau des Inhalts für den Druck
+            let allContent = '';
+            answers.forEach(answer => {
+                allContent += `<h2>Aufgabe ${answer.id}</h2>`;
+                allContent += `<div>${answer.content}</div>`;
+                allContent += `<hr>`;
+            });
+
+            // Öffnen eines neuen Fensters für den Druck
+            const printWindow = window.open('', '', 'height=800,width=800');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Alle Antworten</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            padding: 20px;
+                            background-color: #fff;
+                            color: #000;
+                        }
+                        h2 {
+                            color: #003f5c;
+                        }
+                        hr {
+                            border: 0;
+                            border-top: 1px solid #ccc;
+                            margin: 20px 0;
+                        }
+                        .answer {
+                            margin-bottom: 20px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${allContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+
+            // Warten, bis das Fenster vollständig geladen ist, bevor gedruckt wird
+            printWindow.onload = function() {
+                printWindow.print();
+                printWindow.close();
+                messageEl.textContent = "Druckauftrag wurde gestartet.";
+            };
+        }
+
+        // Event Listener für den Druck-Button
+        document.getElementById('printAllBtn').addEventListener('click', printAllAnswers);
+    </script>
+</body>
+</html>
