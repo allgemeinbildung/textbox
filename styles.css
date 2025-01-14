@@ -99,6 +99,11 @@ button:hover {
 .deleteAnswerBtn {
     background-color: #f44336; /* Rot */
     color: #ffffff;
+    /* Entfernen Sie margin-left */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 .deleteAnswerBtn:hover {
     background-color: #d32f2f; /* Dunkleres Rot beim Hover */
@@ -107,6 +112,11 @@ button:hover {
 .printAnswerBtn {
     background-color: #2196F3; /* Blau */
     color: #ffffff;
+    /* Entfernen Sie margin-left */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 .printAnswerBtn:hover {
     background-color: #1E88E5; /* Dunkleres Blau beim Hover */
@@ -209,7 +219,7 @@ button:hover {
 
 .button-group {
     display: flex;
-    gap: 30px; /* Fügt einen festen Abstand zwischen den Buttons hinzu */
+    gap: 10px; /* Reduzierter fester Abstand zwischen den Buttons */
     margin-top: 10px;
 }
 
@@ -221,7 +231,7 @@ button:hover {
 .deleteAnswerBtn {
     background-color: #f44336; /* Rot */
     color: #ffffff;
-    margin-left: 5px;
+    /* Entfernen Sie margin-left */
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -234,7 +244,7 @@ button:hover {
 .printAnswerBtn {
     background-color: #2196F3; /* Blau */
     color: #ffffff;
-    margin-left: 5px;
+    /* Entfernen Sie margin-left */
     border: none;
     border-radius: 4px;
     cursor: pointer;
