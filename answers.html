@@ -24,20 +24,16 @@
         <pre id="answerText" style="display: none;"></pre>
     </div>
     
-    <!-- Button-Container (nur downloadAllBtn bleibt) -->
+    <!-- Button-Container mit beiden Buttons -->
     <div class="button-container">
         <button id="downloadAllBtn">Text drucken / als PDF speichern</button>
+        <button id="clearBtn" onclick="clearLocalStorage()">Text löschen</button>
     </div>
 
     <!-- Anzeige des gespeicherten Textes -->
     <div id="savedAnswerContainer">
         <h3 id="savedAssignmentTitle"></h3>
         <div id="savedAnswer"></div>
-    </div>
-
-    <!-- Roter Löschen-Button, unter savedAnswerContainer verschoben -->
-    <div class="button-container" style="margin-top: 10px;">
-        <button id="clearBtn" onclick="clearLocalStorage()">Text löschen</button>
     </div>
 
     <!-- Haupt-Button-Container für verbleibende Funktionen -->
