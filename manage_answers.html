@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Gespeicherte Antworten verwalten</title>
+    <!-- Externe CSS-Datei -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Gespeicherte Antworten verwalten</h1>
+        
+        <!-- Bulk Action Container -->
+        <div class="bulk-action-container">
+            <input type="checkbox" id="selectAll">
+            <label for="selectAll"> Alle auswählen</label>
+            <button id="bulkDeleteBtn" disabled>Ausgewählte löschen</button>
+        </div>
+
+        <!-- Anzeige des gespeicherten Textes -->
+        <div id="savedAnswersList">
+            <!-- Gespeicherte Antworten werden hier geladen -->
+        </div>
+    </div>
+
+    <!-- Externe JavaScript-Datei -->
+    <script src="script.js"></script>
+    <script>
+        // Funktion zum Laden und Anzeigen aller gespeicherten Antworten
+        function loadSavedAnswers() {
+            const STORAGE_PREFIX = 'boxsuk-assignment_';
+            const savedAnswersContainer = document.getElementById('savedAnswersList');
+            savedAnswersContainer.innerHTML = ""; // Container leeren
+
+            const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_PREFIX));
+
+            if(storageKeys.length === 0) {
+                savedAnswersContainer.innerHTML = "<p>Keine gespeicherten Antworten gefunden.</p>";
+                return;
+            }
+
+            // Sortieren der storageKeys basierend auf dem Suffix in absteigender Reihenfolge (neueste zuerst)
+            storageKeys.sort((a, b) => {
+                const suffixA = a.replace(STORAGE_PREFIX, '');
+                const suffixB = b.replace(STORAGE_PREFIX, '');
+                return suffixB.localeCompare(suffixA, undefined, {numeric: true, sensitivity: 'base'});
+            });
+
+            storageKeys.forEach(key => {
+                const content = localStorage.getItem(key);
+                if(content) {
+                    const assignmentIdMatch = key.match(/^boxsuk-assignment[_-]?(.+)$/);
+                    const assignmentId = assignmentIdMatch ? assignmentIdMatch[1] : key;
+
+                    const answerDiv = document.createElement("div");
+                    answerDiv.className = "draft";
+
+                    // Checkbox für Bulk-Delete
+                    const checkboxDiv = document.createElement("div");
+                    checkboxDiv.className = "checkbox-container";
+
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.className = "select-answer";
+                    checkbox.value = key;
+                    checkbox.addEventListener('change', toggleBulkDeleteButton);
+
+                    const checkboxLabel = document.createElement("label");
+                    checkboxLabel.textContent = " Auswählen";
+
+                    checkboxDiv.appendChild(checkbox);
+                    checkboxDiv.appendChild(checkboxLabel);
+                    answerDiv.appendChild(checkboxDiv);
+
+                    // Titel der Antwort
+                    const title = document.createElement("h3");
+                    title.textContent = `Aufgabe ${assignmentId}`;
+                    answerDiv.appendChild(title);
+
+                    // Inhalt der Antwort
+                    const contentDiv = document.createElement("div");
+                    contentDiv.className = "answerText";
+                    contentDiv.innerHTML = content;
+                    answerDiv.appendChild(contentDiv);
+
+                    // Button-Gruppe
+                    const buttonGroup = document.createElement("div");
+                    buttonGroup.className = "button-group";
+
+                    // Löschen-Schaltfläche
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.textContent = "Antwort löschen";
+                    deleteBtn.className = "deleteAnswerBtn";
+                    deleteBtn.addEventListener('click', function() {
+                        deleteAnswer(key);
+                    });
+                    buttonGroup.appendChild(deleteBtn);
+
+                    // Druck-Button
+                    const printBtn = document.createElement("button");
+                    printBtn.textContent = "Diese Antwort drucken / Als PDF speichern";
+                    printBtn.className = "printAnswerBtn";
+                    printBtn.addEventListener('click', function() {
+                        printSingleAnswer(`Aufgabe ${assignmentId}`, content);
+                    });
+                    buttonGroup.appendChild(printBtn);
+
+                    answerDiv.appendChild(buttonGroup);
+
+                    savedAnswersContainer.appendChild(answerDiv);
+                }
+            });
+        }
+
+        // Funktion zum Löschen einer einzelnen Antwort
+        function deleteAnswer(assignmentId) {
+            if(confirm("Sind Sie sicher, dass Sie diese Antwort löschen möchten?")) {
+                localStorage.removeItem(assignmentId);
+                alert("Antwort wurde gelöscht.");
+                console.log(`Antwort für ${assignmentId} gelöscht.`);
+                loadSavedAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
+            }
+        }
+
+        // Funktion zum Aktivieren/Deaktivieren der Bulk Delete Schaltfläche
+        function toggleBulkDeleteButton() {
+            const selected = document.querySelectorAll(".select-answer:checked").length;
+            const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
+            bulkDeleteBtn.disabled = selected === 0;
+        }
+
+        // Funktion zum Löschen ausgewählter Antworten (Bulk)
+        function bulkDeleteAnswers() {
+            const selectedCheckboxes = document.querySelectorAll(".select-answer:checked");
+            if(selectedCheckboxes.length === 0) {
+                alert("Bitte wählen Sie mindestens eine Antwort zum Löschen aus.");
+                return;
+            }
+
+            if(!confirm(`Sind Sie sicher, dass Sie ${selectedCheckboxes.length} ausgewählte Antwort(en) löschen möchten?`)) {
+                return;
+            }
+
+            selectedCheckboxes.forEach(cb => {
+                const assignmentId = cb.value;
+                localStorage.removeItem(assignmentId);
+                console.log(`Antwort für ${assignmentId} gelöscht.`);
+            });
+
+            alert(`${selectedCheckboxes.length} Antwort(en) wurden gelöscht.`);
+            loadSavedAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
+        }
+
+        // Funktion zum Drucken einer einzelnen Antwort
+        function printSingleAnswer(title, content) {
+            // Erstelle ein temporäres Div
+            const printDiv = document.createElement('div');
+            printDiv.id = 'printSingleContent';
+
+            // Füge den Titel hinzu
+            const titleElement = document.createElement('h2');
+            titleElement.textContent = title;
+            printDiv.appendChild(titleElement);
+
+            // Füge den Inhalt hinzu
+            const contentElement = document.createElement('div');
+            contentElement.innerHTML = content; // Verwenden Sie innerHTML für formatierte Inhalte
+            printDiv.appendChild(contentElement);
+
+            // Füge das Div zum Body hinzu
+            document.body.appendChild(printDiv);
+
+            // Füge die Klasse 'print-single' zum Body hinzu
+            document.body.classList.add('print-single');
+
+            // Definiere die Handler-Funktion
+            function handleAfterPrint() {
+                document.body.classList.remove('print-single');
+                const printDivAfter = document.getElementById('printSingleContent');
+                if (printDivAfter) {
+                    document.body.removeChild(printDivAfter);
+                }
+                // Entferne den Event Listener
+                window.removeEventListener('afterprint', handleAfterPrint);
+            }
+
+            // Füge den Event Listener hinzu
+            window.addEventListener('afterprint', handleAfterPrint);
+
+            // Trigger den Druck
+            window.print();
+        }
+
+        // Event Listener für den Bulk Delete Button
+        document.getElementById("bulkDeleteBtn").addEventListener('click', bulkDeleteAnswers);
+
+        // Event Listener für die "Alle auswählen" Checkbox
+        document.getElementById("selectAll").addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll(".select-answer");
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            toggleBulkDeleteButton();
+        });
+
+        // Lade gespeicherte Antworten beim Laden der Seite
+        document.addEventListener("DOMContentLoaded", function() {
+            loadSavedAnswers();
+        });
+    </script>
+</body>
+</html>
