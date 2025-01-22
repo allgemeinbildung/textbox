@@ -13,8 +13,8 @@
     --text-secondary-color: #555555;
     --button-print-all-bg: #4CAF50; /* Grün für den neuen Button */
     --button-print-all-hover-bg: #45a049; /* Dunkleres Grün beim Hover */
-    --button-export-current-bg: #6a1b9a; /* Lila für den Export-Button */
-    --button-export-current-hover-bg: #8e24aa; /* Helleres Lila beim Hover */
+    --button-export-current-bg: #4CAF50; /* Lila für den Export-Button */
+    --button-export-current-hover-bg: #4CAF50; /* Helleres Lila beim Hover */
 }
 
 body {
