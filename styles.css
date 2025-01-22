@@ -1,3 +1,6 @@
+/* ================================================
+File: styles.css
+=============================================== */
 /* Grundlegende Stile */
 :root {
     --background-color: #ffffff; /* Weißer Hintergrund */
@@ -13,8 +16,6 @@
     --text-secondary-color: #555555;
     --button-print-all-bg: #4CAF50; /* Grün für den neuen Button */
     --button-print-all-hover-bg: #45a049; /* Dunkleres Grün beim Hover */
-    --button-export-current-bg: #4CAF50; /* Lila für den Export-Button */
-    --button-export-current-hover-bg: #4CAF50; /* Helleres Lila beim Hover */
 }
 
 body {
@@ -86,14 +87,19 @@ button:hover {
 }
 
 #copyAnswerBtn {
-    background-color: var(--button-copy-bg); /* Grün */
-    color: var(--button-copy-text); /* Weißer Text */
-}
-#copyAnswerBtn:hover {
-    background-color: #66BB6A; /* Dunkleres Grün beim Hover */
+    /* Dieser Button wurde entfernt und daher auch die Positionierung */
+    display: none;
 }
 
-.copyAnswerBtn {
+#exportTxtBtn {
+    background-color: #4CAF50; /* Grün */
+    color: #ffffff; /* Weißer Text */
+}
+#exportTxtBtn:hover {
+    background-color: #45a049; /* Dunkleres Grün beim Hover */
+}
+
+#copyAnswerBtn {
     /* Diese Klasse wurde entfernt, da der Button entfernt wurde */
     display: none;
 }
@@ -131,16 +137,6 @@ button:hover {
 }
 #printAllBtn:hover {
     background-color: var(--button-print-all-hover-bg); /* Dunkleres Grün beim Hover */
-}
-
-/* Stil für den "Aktuelle Antwort als TXT exportieren" Button */
-#exportCurrentTxtBtn {
-    background-color: var(--button-export-current-bg); /* Lila */
-    color: var(--button-export-current-text, #ffffff); /* Weißer Text */
-}
-
-#exportCurrentTxtBtn:hover {
-    background-color: var(--button-export-current-hover-bg); /* Helleres Lila beim Hover */
 }
 
 #bulkDeleteBtn {
@@ -238,6 +234,32 @@ button:hover {
 .copyAnswerBtn {
     /* Diese Klasse wurde entfernt, da der Button entfernt wurde */
     display: none;
+}
+
+.deleteAnswerBtn {
+    background-color: #f44336; /* Rot */
+    color: #ffffff;
+    /* Entfernen Sie margin-left */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.deleteAnswerBtn:hover {
+    background-color: #d32f2f; /* Dunkleres Rot beim Hover */
+}
+
+.printAnswerBtn {
+    background-color: #2196F3; /* Blau */
+    color: #ffffff;
+    /* Entfernen Sie margin-left */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.printAnswerBtn:hover {
+    background-color: #1E88E5; /* Dunkleres Blau beim Hover */
 }
 
 /* Druckstile */
@@ -338,4 +360,3 @@ summary::after {
     content: " ▼";
     float: right;
 }
-
