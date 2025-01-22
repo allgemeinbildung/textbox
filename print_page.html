@@ -24,9 +24,18 @@
             border: none;
             border-radius: 4px;
             transition: background-color 0.3s;
+            margin: 5px; /* Abstand zwischen den Buttons */
         }
         button:hover {
             background-color: #45a049; /* Dunkleres Grün beim Hover */
+        }
+        /* Neuer Stil für den "Alle Antworten als TXT exportieren" Button */
+        #downloadAllTxtBtn {
+            background-color: #6a1b9a; /* Lila */
+            color: #ffffff; /* Weißer Text */
+        }
+        #downloadAllTxtBtn:hover {
+            background-color: #8e24aa; /* Helleres Lila beim Hover */
         }
         .message {
             margin-top: 20px;
@@ -39,6 +48,7 @@
     <div class="container">
         <h1>Alle Gespeicherten Antworten Drucken</h1>
         <button id="printAllBtn">Alle Antworten drucken / Als PDF speichern</button>
+        <button id="downloadAllTxtBtn">Alle Antworten als TXT exportieren</button> <!-- Neuer Button -->
         <div class="message" id="message"></div>
     </div>
 
@@ -123,8 +133,53 @@
             };
         }
 
+        // Funktion zum Download aller Antworten als TXT-Datei
+        function downloadAllAnswersAsTxt() {
+            const answers = getAllSavedAnswers();
+            const messageEl = document.getElementById('message');
+
+            if (answers.length === 0) {
+                messageEl.textContent = "Keine gespeicherten Antworten gefunden.";
+                return;
+            }
+
+            // Aufbau des Inhalts für die TXT-Datei
+            let txtContent = '';
+            answers.forEach(answer => {
+                txtContent += `Aufgabe ${answer.id}\n`;
+                // Entferne HTML-Tags, um reinen Text zu erhalten
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = answer.content;
+                const plainText = tempDiv.textContent || tempDiv.innerText || "";
+                txtContent += `${plainText}\n\n`;
+            });
+
+            // Erstelle ein Blob-Objekt mit dem Textinhalt
+            const blob = new Blob([txtContent], { type: 'text/plain' });
+
+            // Erstelle eine URL für das Blob
+            const url = URL.createObjectURL(blob);
+
+            // Erstelle ein temporäres Link-Element
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'alle_antworten.txt';
+            document.body.appendChild(a);
+            a.click();
+
+            // Entferne das temporäre Link-Element und die Blob-URL
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            messageEl.textContent = "Alle Antworten wurden als TXT exportiert.";
+            console.log("Alle Antworten wurden als TXT exportiert.");
+        }
+
         // Event Listener für den Druck-Button
         document.getElementById('printAllBtn').addEventListener('click', printAllAnswers);
+
+        // Event Listener für den neuen Download-Button
+        document.getElementById('downloadAllTxtBtn').addEventListener('click', downloadAllAnswersAsTxt);
     </script>
 </body>
 </html>
