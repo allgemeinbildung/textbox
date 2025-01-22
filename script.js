@@ -1,6 +1,4 @@
-// ================================================
-File: script.js
-===============================================
+// File: allgemeinbildung-textbox/script.js
 // Funktion zum Abrufen eines Abfrageparameters nach Name
 function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -215,34 +213,6 @@ document.getElementById("downloadAllBtn").addEventListener('click', function() {
 
     // Nutze die vorhandene Funktion zum Drucken einer einzelnen Antwort
     printSingleAnswer(titleText, savedText);
-});
-
-// Event Listener für den neuen Button "Diese Antwort als TXT speichern"
-document.getElementById("exportTxtBtn").addEventListener('click', function() {
-    const currentStorageKey = STORAGE_PREFIX + assignmentId;
-    const savedText = localStorage.getItem(currentStorageKey);
-
-    if (!savedText) {
-        alert("Keine gespeicherte Antwort zum Exportieren als TXT vorhanden.");
-        console.log("Versuch, die aktuelle Antwort zu exportieren, aber keine ist gespeichert");
-        return;
-    }
-
-    // Convert HTML to plain text
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = savedText;
-    const plainText = tempDiv.textContent || tempDiv.innerText || "";
-
-    // Create a blob and trigger download
-    const blob = new Blob([plainText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'antwort.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 });
 
 // Event Listener für die "Alle Antworten drucken / Als PDF speichern" Schaltfläche
@@ -608,4 +578,38 @@ quill.clipboard.addMatcher(Node.ELEMENT_NODE, function(node, delta) {
 quill.root.addEventListener('paste', function(e) {
     e.preventDefault();
     alert("Einfügen von Inhalten ist in diesem Editor deaktiviert.");
+});
+
+// Event Listener für den neuen "Export als TXT" Button
+document.getElementById("exportTxtBtn").addEventListener('click', function() {
+    const currentStorageKey = STORAGE_PREFIX + assignmentId;
+    const savedHtml = localStorage.getItem(currentStorageKey);
+
+    if (!savedHtml) {
+        alert("Keine gespeicherte Antwort zum Exportieren vorhanden.");
+        console.log("Versuch, die Antwort zu exportieren, aber keine ist gespeichert");
+        return;
+    }
+
+    // Erstelle ein temporäres DOM-Element, um den Text zu extrahieren
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = savedHtml;
+    const plainText = tempDiv.innerText;
+
+    // Erstelle eine Blob mit dem Textinhalt
+    const blob = new Blob([plainText], { type: 'text/plain' });
+
+    // Erstelle einen Link zum Herunterladen
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${assignmentSuffix || 'antwort'}.txt`;
+
+    // Füge den Link zum Dokument hinzu und klicke ihn programmgesteuert
+    document.body.appendChild(link);
+    link.click();
+
+    // Entferne den Link wieder
+    document.body.removeChild(link);
+
+    console.log(`Antwort als TXT exportiert: ${assignmentSuffix || 'antwort'}.txt`);
 });
