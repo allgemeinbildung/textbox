@@ -352,3 +352,12 @@ summary::after {
     content: " ▼";
     float: right;
 }
+/* Stil für den "Alle Antworten als TXT exportieren" Button */
+#exportTxtBtn {
+    background-color: #6a1b9a; /* Ein schönes Lila */
+    color: #ffffff; /* Weißer Text */
+}
+
+#exportTxtBtn:hover {
+    background-color: #8e24aa; /* Helleres Lila beim Hover */
+}
