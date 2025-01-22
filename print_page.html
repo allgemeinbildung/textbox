@@ -144,15 +144,21 @@
                 return;
             }
 
-            // Aufbau des Inhalts für die TXT-Datei
             let txtContent = '';
             answers.forEach(answer => {
-                txtContent += `Aufgabe ${answer.id}\n`;
-                // Entferne HTML-Tags, um reinen Text zu erhalten
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = answer.content;
-                const plainText = tempDiv.textContent || tempDiv.innerText || "";
-                txtContent += `${plainText}\n\n`;
+                
+                let plainText = tempDiv.innerHTML
+                    .replace(/<\/div>/gi, "\n")
+                    .replace(/<br>/gi, "\n")
+                    .replace(/<\/p>/gi, "\n\n")
+                    .replace(/<[^>]+>/g, "");
+                    
+                plainText = plainText.replace(/\n\s*\n/g, '\n\n').trim();
+
+                txtContent += `Aufgabe ${answer.id}\n${plainText}\n`;
+                txtContent += `URL: ${window.location.href}\nAssignment ID: ${answer.id}\n\n`;
             });
 
             // Erstelle ein Blob-Objekt mit dem Textinhalt

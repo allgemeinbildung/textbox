@@ -585,26 +585,28 @@ if (exportTxtBtn) {
             return;
         }
 
-        // Erstelle ein temporäres DOM-Element, um den Text zu extrahieren
+        // HTML zu Text mit korrekten Zeilenumbrüchen konvertieren
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = savedHtml;
-        const plainText = tempDiv.innerText;
+        
+        let plainText = tempDiv.innerHTML
+            .replace(/<\/div>/gi, "\n")
+            .replace(/<br>/gi, "\n")
+            .replace(/<\/p>/gi, "\n\n")
+            .replace(/<[^>]+>/g, "");
+            
+        plainText = plainText.replace(/\n\s*\n/g, '\n\n').trim();
 
-        // Erstelle eine Blob mit dem Textinhalt
+        // Füge URL und AssignmentId hinzu
+        plainText += `\n\nURL: ${window.location.href}\nAssignment ID: ${assignmentId}`;
+
+        // Blob und Download
         const blob = new Blob([plainText], { type: 'text/plain' });
-
-        // Erstelle einen Link zum Herunterladen
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = `${assignmentSuffix || 'antwort'}.txt`;
-
-        // Füge den Link zum Dokument hinzu und klicke ihn programmgesteuert
         document.body.appendChild(link);
         link.click();
-
-        // Entferne den Link wieder
         document.body.removeChild(link);
-
-        console.log(`Antwort als TXT exportiert: ${assignmentSuffix || 'antwort'}.txt`);
     });
 }
