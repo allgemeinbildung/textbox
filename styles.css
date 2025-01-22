@@ -13,6 +13,8 @@
     --text-secondary-color: #555555;
     --button-print-all-bg: #4CAF50; /* Grün für den neuen Button */
     --button-print-all-hover-bg: #45a049; /* Dunkleres Grün beim Hover */
+    --button-export-current-bg: #6a1b9a; /* Lila für den Export-Button */
+    --button-export-current-hover-bg: #8e24aa; /* Helleres Lila beim Hover */
 }
 
 body {
@@ -131,6 +133,16 @@ button:hover {
     background-color: var(--button-print-all-hover-bg); /* Dunkleres Grün beim Hover */
 }
 
+/* Stil für den "Aktuelle Antwort als TXT exportieren" Button */
+#exportCurrentTxtBtn {
+    background-color: var(--button-export-current-bg); /* Lila */
+    color: var(--button-export-current-text, #ffffff); /* Weißer Text */
+}
+
+#exportCurrentTxtBtn:hover {
+    background-color: var(--button-export-current-hover-bg); /* Helleres Lila beim Hover */
+}
+
 #bulkDeleteBtn {
     background-color: var(--bulk-delete-bg);
     color: var(--bulk-delete-text);
@@ -226,32 +238,6 @@ button:hover {
 .copyAnswerBtn {
     /* Diese Klasse wurde entfernt, da der Button entfernt wurde */
     display: none;
-}
-
-.deleteAnswerBtn {
-    background-color: #f44336; /* Rot */
-    color: #ffffff;
-    /* Entfernen Sie margin-left */
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-.deleteAnswerBtn:hover {
-    background-color: #d32f2f; /* Dunkleres Rot beim Hover */
-}
-
-.printAnswerBtn {
-    background-color: #2196F3; /* Blau */
-    color: #ffffff;
-    /* Entfernen Sie margin-left */
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-.printAnswerBtn:hover {
-    background-color: #1E88E5; /* Dunkleres Blau beim Hover */
 }
 
 /* Druckstile */
@@ -352,12 +338,4 @@ summary::after {
     content: " ▼";
     float: right;
 }
-/* Stil für den "Alle Antworten als TXT exportieren" Button */
-#exportTxtBtn {
-    background-color: #6a1b9a; /* Ein schönes Lila */
-    color: #ffffff; /* Weißer Text */
-}
 
-#exportTxtBtn:hover {
-    background-color: #8e24aa; /* Helleres Lila beim Hover */
-}
