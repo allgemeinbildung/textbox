@@ -260,61 +260,53 @@ document.getElementById("selectAll").addEventListener('change', function() {
 // Event Listener für die "Ausgewählte löschen" Schaltfläche
 document.getElementById("bulkDeleteBtn").addEventListener('click', bulkDeleteAnswers);
 
-// Event Listener für den neuen "Export als TXT" Button
-document.getElementById("exportTxtBtn").addEventListener('click', exportAnswersAsTxt);
+// Event Listener für den neuen "Aktuelle Antwort als TXT exportieren" Button
+document.getElementById("exportCurrentTxtBtn").addEventListener('click', exportCurrentAnswerAsTxt);
 
-// Funktion zum Exportieren aller Antworten als TXT-Datei
-function exportAnswersAsTxt() {
-    const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_PREFIX));
+// Funktion zum Exportieren der aktuellen Antwort als TXT-Datei
+function exportCurrentAnswerAsTxt() {
+    // Holen des aktuellen HTML-Inhalts aus dem Quill-Editor
+    const htmlContent = quill.root.innerHTML;
     
-    if(storageKeys.length === 0) {
-        alert("Keine gespeicherten Antworten zum Exportieren vorhanden.");
-        console.log("Versuch, Antworten zu exportieren, aber keine sind gespeichert");
+    // Erstellen eines temporären Divs, um den reinen Text zu extrahieren
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    const plainText = tempDiv.textContent || tempDiv.innerText || "";
+    
+    if (plainText.trim() === "") {
+        alert("Die aktuelle Antwort ist leer und kann nicht exportiert werden.");
+        console.log("Versuch, eine leere Antwort zu exportieren.");
         return;
     }
-
-    let txtContent = '';
-
-    storageKeys.sort((a, b) => {
-        const suffixA = a.replace(STORAGE_PREFIX, '');
-        const suffixB = b.replace(STORAGE_PREFIX, '');
-        return suffixB.localeCompare(suffixA, undefined, {numeric: true, sensitivity: 'base'});
-    });
-
-    storageKeys.forEach(assignmentIdKey => {
-        const text = localStorage.getItem(assignmentIdKey);
-        if(text) {
-            const assignmentIdMatch = assignmentIdKey.match(/^boxsuk-assignment[_-]?(.+)$/);
-            const assignmentIdClean = assignmentIdMatch ? assignmentIdMatch[1] : assignmentIdKey;
-            const title = `Aufgabe ${assignmentIdClean}`;
-            txtContent += `${title}\n`;
-            // Entferne HTML-Tags, falls vorhanden, um reinen Text zu erhalten
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = text;
-            const plainText = tempDiv.textContent || tempDiv.innerText || "";
-            txtContent += `${plainText}\n\n`;
-            txtContent += `----------------------------------------\n\n`;
-        }
-    });
-
+    
+    // Kombiniere parentTitle und assignmentSuffix für den Dateititel
+    const titleText = parentTitle
+        ? `${parentTitle} - Aufgabe: ${assignmentSuffix}`
+        : `Aufgabe: ${assignmentSuffix}`;
+    
+    // Erstelle den Inhalt der TXT-Datei
+    const txtContent = `${titleText}\n\n${plainText}`;
+    
     // Erstelle ein Blob-Objekt mit dem Textinhalt
     const blob = new Blob([txtContent], { type: 'text/plain' });
-
+    
     // Erstelle eine URL für das Blob
     const url = URL.createObjectURL(blob);
-
+    
     // Erstelle ein temporäres Link-Element
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'alle_antworten.txt';
+    // Erstelle einen sicheren Dateinamen, z.B. "Aufgabe_1.txt"
+    const safeTitle = titleText.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    a.download = `${safeTitle}.txt`;
     document.body.appendChild(a);
     a.click();
-
+    
     // Entferne das temporäre Link-Element und die Blob-URL
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-
-    console.log("Alle Antworten wurden als TXT exportiert.");
+    
+    console.log("Die aktuelle Antwort wurde als TXT exportiert.");
 }
 
 // Funktion zum Laden und Anzeigen aller gespeicherten Antworten
