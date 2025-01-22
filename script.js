@@ -601,12 +601,19 @@ if (exportTxtBtn) {
         plainText += `\n\nURL: ${window.location.href}\nAssignment ID: ${assignmentId}`;
 
         // Blob und Download
-        const blob = new Blob([plainText], { type: 'text/plain' });
+        const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${assignmentSuffix || 'antwort'}.txt`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    
+        if ('download' in link) {
+            link.download = `${assignmentSuffix || 'antwort'}.txt`;
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 100); // Clean up
+        } else {
+            window.open(url); // Fallback for unsupported browsers
+        }
     });
 }

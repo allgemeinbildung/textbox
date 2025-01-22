@@ -1,4 +1,3 @@
-<!-- File: allgemeinbildung-textbox/print_page.html -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -30,7 +29,6 @@
         button:hover {
             background-color: #45a049; /* Dunkleres Grün beim Hover */
         }
-        /* Neuer Stil für den "Alle Antworten als TXT exportieren" Button */
         #downloadAllTxtBtn {
             background-color: #6a1b9a; /* Lila */
             color: #ffffff; /* Weißer Text */
@@ -49,14 +47,13 @@
     <div class="container">
         <h1>Alle Gespeicherten Antworten Drucken</h1>
         <button id="printAllBtn">Alle Antworten drucken / Als PDF speichern</button>
-        <button id="downloadAllTxtBtn">Alle Antworten als TXT exportieren</button> <!-- Neuer Button -->
+        <button id="downloadAllTxtBtn">Alle Antworten als TXT exportieren</button>
         <div class="message" id="message"></div>
     </div>
 
     <script>
-        // Funktion zum Abrufen aller gespeicherten Antworten
         function getAllSavedAnswers() {
-            const STORAGE_PREFIX = 'boxsuk-assignment_'; // Stellen Sie sicher, dass dies mit Ihrem Präfix übereinstimmt
+            const STORAGE_PREFIX = 'boxsuk-assignment_';
             const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_PREFIX));
             const answers = [];
 
@@ -74,7 +71,6 @@
             return answers;
         }
 
-        // Funktion zum Öffnen des Druckdialogs mit allen Antworten
         function printAllAnswers() {
             const answers = getAllSavedAnswers();
             const messageEl = document.getElementById('message');
@@ -84,7 +80,6 @@
                 return;
             }
 
-            // Aufbau des Inhalts für den Druck
             let allContent = '';
             answers.forEach(answer => {
                 allContent += `<h2>Aufgabe ${answer.id}</h2>`;
@@ -92,41 +87,22 @@
                 allContent += `<hr>`;
             });
 
-            // Öffnen eines neuen Fensters für den Druck
             const printWindow = window.open('', '', 'height=800,width=800');
             printWindow.document.write(`
                 <html>
                 <head>
                     <title>Alle Antworten</title>
                     <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            padding: 20px;
-                            background-color: #fff;
-                            color: #000;
-                        }
-                        h2 {
-                            color: #003f5c;
-                        }
-                        hr {
-                            border: 0;
-                            border-top: 1px solid #ccc;
-                            margin: 20px 0;
-                        }
-                        .answer {
-                            margin-bottom: 20px;
-                        }
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h2 { color: #003f5c; }
+                        hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
                     </style>
                 </head>
-                <body>
-                    ${allContent}
-                </body>
+                <body>${allContent}</body>
                 </html>
             `);
             printWindow.document.close();
-            printWindow.focus();
-
-            // Warten, bis das Fenster vollständig geladen ist, bevor gedruckt wird
+            
             printWindow.onload = function() {
                 printWindow.print();
                 printWindow.close();
@@ -134,7 +110,6 @@
             };
         }
 
-        // Funktion zum Download aller Antworten als TXT-Datei
         function downloadAllAnswersAsTxt() {
             const answers = getAllSavedAnswers();
             const messageEl = document.getElementById('message');
@@ -156,36 +131,31 @@
                     .replace(/<[^>]+>/g, "");
                     
                 plainText = plainText.replace(/\n\s*\n/g, '\n\n').trim();
-
-                txtContent += `Aufgabe ${answer.id}\n${plainText}\n`;
-                txtContent += `URL: ${window.location.href}\nAssignment ID: ${answer.id}\n\n`;
+                txtContent += `Aufgabe ${answer.id}\n${plainText}\nURL: ${window.location.href}\nAssignment ID: ${answer.id}\n\n`;
             });
 
-            // Erstelle ein Blob-Objekt mit dem Textinhalt
-            const blob = new Blob([txtContent], { type: 'text/plain' });
-
-            // Erstelle eine URL für das Blob
+            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
-
-            // Erstelle ein temporäres Link-Element
             const a = document.createElement('a');
-            a.href = url;
-            a.download = 'alle_antworten.txt';
-            document.body.appendChild(a);
-            a.click();
 
-            // Entferne das temporäre Link-Element und die Blob-URL
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Feature detection for download attribute
+            if (typeof a.download !== 'undefined') {
+                a.download = 'alle_antworten.txt';
+                a.href = url;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            } else {
+                // Fallback for browsers without download support
+                window.open(url);
+            }
 
             messageEl.textContent = "Alle Antworten wurden als TXT exportiert.";
-            console.log("Alle Antworten wurden als TXT exportiert.");
         }
 
-        // Event Listener für den Druck-Button
+        // Event Listeners
         document.getElementById('printAllBtn').addEventListener('click', printAllAnswers);
-
-        // Event Listener für den neuen Download-Button
         document.getElementById('downloadAllTxtBtn').addEventListener('click', downloadAllAnswersAsTxt);
     </script>
 </body>
