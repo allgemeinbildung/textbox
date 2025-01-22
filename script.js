@@ -192,7 +192,7 @@ function bulkDeleteAnswers() {
     loadAllAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
 }
 
-// Event Listener für den Button "Text drucken / Als PDF speichern" (nun nur aktuelle Antwort)
+// Event Listener für den Button "Text drucken / Als PDF speichern" (nur aktuelle Antwort)
 document.getElementById("downloadAllBtn").addEventListener('click', function() {
     const currentStorageKey = STORAGE_PREFIX + assignmentId;
     const savedText = localStorage.getItem(currentStorageKey);
@@ -396,7 +396,7 @@ function loadAllAnswers() {
                 // Extrahiere reinen Text für den Druck
                 const tempDivPrint = document.createElement('div');
                 tempDivPrint.innerHTML = text;
-                const plainTextPrint = tempDivPrint.innerHTML; // Verwenden Sie innerHTML für Formatierungen
+                const plainTextPrint = tempDivPrint.textContent || tempDivPrint.innerText || "";
                 printSingleAnswer(`Aufgabe ${assignmentIdClean}`, plainTextPrint);
             });
             buttonGroup.appendChild(printBtn);
@@ -495,31 +495,6 @@ function printAllAnswers(allContent) {
 
     // Trigger den Druck
     window.print();
-}
-
-// Funktion zum Kopieren einer einzelnen Antwort (entfernt, da "Antwort kopieren" Button entfernt wurde)
-// Diese Funktion wird nicht mehr benötigt und kann entfernt werden
-
-// Funktion für die Bulk Delete
-function bulkDeleteAnswers() {
-    const selectedCheckboxes = document.querySelectorAll(".select-answer:checked");
-    if(selectedCheckboxes.length === 0) {
-        alert("Bitte wählen Sie mindestens eine Antwort zum Löschen aus.");
-        return;
-    }
-
-    if(!confirm(`Sind Sie sicher, dass Sie ${selectedCheckboxes.length} ausgewählte Antwort(en) löschen möchten?`)) {
-        return;
-    }
-
-    selectedCheckboxes.forEach(cb => {
-        const assignmentId = cb.value;
-        localStorage.removeItem(assignmentId);
-        console.log(`Antwort für ${assignmentId} gelöscht.`);
-    });
-
-    alert(`${selectedCheckboxes.length} Antwort(en) wurden gelöscht.`);
-    loadAllAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
 }
 
 // Funktion zum Kopieren als Fallback
