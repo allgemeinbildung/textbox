@@ -1,3 +1,6 @@
+// ================================================
+File: script.js
+===============================================
 // Funktion zum Abrufen eines Abfrageparameters nach Name
 function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -192,7 +195,7 @@ function bulkDeleteAnswers() {
     loadAllAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
 }
 
-// Event Listener für den Button "Text drucken / Als PDF speichern" (nur aktuelle Antwort)
+// Event Listener für den Button "Text drucken / Als PDF speichern" (nun nur aktuelle Antwort)
 document.getElementById("downloadAllBtn").addEventListener('click', function() {
     const currentStorageKey = STORAGE_PREFIX + assignmentId;
     const savedText = localStorage.getItem(currentStorageKey);
@@ -212,6 +215,34 @@ document.getElementById("downloadAllBtn").addEventListener('click', function() {
 
     // Nutze die vorhandene Funktion zum Drucken einer einzelnen Antwort
     printSingleAnswer(titleText, savedText);
+});
+
+// Event Listener für den neuen Button "Diese Antwort als TXT speichern"
+document.getElementById("exportTxtBtn").addEventListener('click', function() {
+    const currentStorageKey = STORAGE_PREFIX + assignmentId;
+    const savedText = localStorage.getItem(currentStorageKey);
+
+    if (!savedText) {
+        alert("Keine gespeicherte Antwort zum Exportieren als TXT vorhanden.");
+        console.log("Versuch, die aktuelle Antwort zu exportieren, aber keine ist gespeichert");
+        return;
+    }
+
+    // Convert HTML to plain text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = savedText;
+    const plainText = tempDiv.textContent || tempDiv.innerText || "";
+
+    // Create a blob and trigger download
+    const blob = new Blob([plainText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'antwort.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 });
 
 // Event Listener für die "Alle Antworten drucken / Als PDF speichern" Schaltfläche
@@ -259,55 +290,6 @@ document.getElementById("selectAll").addEventListener('change', function() {
 
 // Event Listener für die "Ausgewählte löschen" Schaltfläche
 document.getElementById("bulkDeleteBtn").addEventListener('click', bulkDeleteAnswers);
-
-// Event Listener für den neuen "Aktuelle Antwort als TXT exportieren" Button
-document.getElementById("exportCurrentTxtBtn").addEventListener('click', exportCurrentAnswerAsTxt);
-
-// Funktion zum Exportieren der aktuellen Antwort als TXT-Datei
-function exportCurrentAnswerAsTxt() {
-    // Holen des aktuellen HTML-Inhalts aus dem Quill-Editor
-    const htmlContent = quill.root.innerHTML;
-    
-    // Erstellen eines temporären Divs, um den reinen Text zu extrahieren
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
-    const plainText = tempDiv.textContent || tempDiv.innerText || "";
-    
-    if (plainText.trim() === "") {
-        alert("Die aktuelle Antwort ist leer und kann nicht exportiert werden.");
-        console.log("Versuch, eine leere Antwort zu exportieren.");
-        return;
-    }
-    
-    // Kombiniere parentTitle und assignmentSuffix für den Dateititel
-    const titleText = parentTitle
-        ? `${parentTitle} - Aufgabe: ${assignmentSuffix}`
-        : `Aufgabe: ${assignmentSuffix}`;
-    
-    // Erstelle den Inhalt der TXT-Datei
-    const txtContent = `${titleText}\n\n${plainText}`;
-    
-    // Erstelle ein Blob-Objekt mit dem Textinhalt
-    const blob = new Blob([txtContent], { type: 'text/plain' });
-    
-    // Erstelle eine URL für das Blob
-    const url = URL.createObjectURL(blob);
-    
-    // Erstelle ein temporäres Link-Element
-    const a = document.createElement('a');
-    a.href = url;
-    // Erstelle einen sicheren Dateinamen, z.B. "Aufgabe_1.txt"
-    const safeTitle = titleText.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    a.download = `${safeTitle}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    
-    // Entferne das temporäre Link-Element und die Blob-URL
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    console.log("Die aktuelle Antwort wurde als TXT exportiert.");
-}
 
 // Funktion zum Laden und Anzeigen aller gespeicherten Antworten
 function loadAllAnswers() {
@@ -396,7 +378,7 @@ function loadAllAnswers() {
                 // Extrahiere reinen Text für den Druck
                 const tempDivPrint = document.createElement('div');
                 tempDivPrint.innerHTML = text;
-                const plainTextPrint = tempDivPrint.textContent || tempDivPrint.innerText || "";
+                const plainTextPrint = tempDivPrint.innerHTML; // Verwenden Sie innerHTML für Formatierungen
                 printSingleAnswer(`Aufgabe ${assignmentIdClean}`, plainTextPrint);
             });
             buttonGroup.appendChild(printBtn);
@@ -495,6 +477,31 @@ function printAllAnswers(allContent) {
 
     // Trigger den Druck
     window.print();
+}
+
+// Funktion zum Kopieren einer einzelnen Antwort (entfernt, da "Antwort kopieren" Button entfernt wurde)
+// Diese Funktion wird nicht mehr benötigt und kann entfernt werden
+
+// Funktion für die Bulk Delete
+function bulkDeleteAnswers() {
+    const selectedCheckboxes = document.querySelectorAll(".select-answer:checked");
+    if(selectedCheckboxes.length === 0) {
+        alert("Bitte wählen Sie mindestens eine Antwort zum Löschen aus.");
+        return;
+    }
+
+    if(!confirm(`Sind Sie sicher, dass Sie ${selectedCheckboxes.length} ausgewählte Antwort(en) löschen möchten?`)) {
+        return;
+    }
+
+    selectedCheckboxes.forEach(cb => {
+        const assignmentId = cb.value;
+        localStorage.removeItem(assignmentId);
+        console.log(`Antwort für ${assignmentId} gelöscht.`);
+    });
+
+    alert(`${selectedCheckboxes.length} Antwort(en) wurden gelöscht.`);
+    loadAllAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
 }
 
 // Funktion zum Kopieren als Fallback
