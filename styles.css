@@ -1,6 +1,4 @@
-/* ================================================
-File: styles.css
-=============================================== */
+/* File: allgemeinbildung-textbox/styles.css */
 /* Grundlegende Stile */
 :root {
     --background-color: #ffffff; /* Weißer Hintergrund */
@@ -87,21 +85,19 @@ button:hover {
 }
 
 #copyAnswerBtn {
-    /* Dieser Button wurde entfernt und daher auch die Positionierung */
-    display: none;
+    background-color: var(--button-copy-bg); /* Grün */
+    color: var(--button-copy-text); /* Weißer Text */
+}
+#copyAnswerBtn:hover {
+    background-color: #66BB6A; /* Dunkleres Grün beim Hover */
 }
 
-#exportTxtBtn {
-    background-color: #4CAF50; /* Grün */
-    color: #ffffff; /* Weißer Text */
+.exportTxtBtn {
+    background-color: var(--button-copy-bg); /* Grün */
+    color: var(--button-copy-text); /* Weißer Text */
 }
-#exportTxtBtn:hover {
-    background-color: #45a049; /* Dunkleres Grün beim Hover */
-}
-
-#copyAnswerBtn {
-    /* Diese Klasse wurde entfernt, da der Button entfernt wurde */
-    display: none;
+.exportTxtBtn:hover {
+    background-color: #66BB6A; /* Dunkleres Grün beim Hover */
 }
 
 .deleteAnswerBtn {
@@ -260,6 +256,24 @@ button:hover {
 }
 .printAnswerBtn:hover {
     background-color: #1E88E5; /* Dunkleres Blau beim Hover */
+}
+
+/* Neuer Stil für den "Alle Antworten drucken / Als PDF speichern" Button */
+#printAllBtn {
+    background-color: var(--button-print-all-bg); /* Grün */
+    color: var(--button-copy-text); /* Weißer Text */
+}
+#printAllBtn:hover {
+    background-color: var(--button-print-all-hover-bg); /* Dunkleres Grün beim Hover */
+}
+
+/* Stil für den neuen "Export als TXT" Button */
+#exportTxtBtn {
+    background-color: var(--button-copy-bg); /* Grün */
+    color: var(--button-copy-text); /* Weißer Text */
+}
+#exportTxtBtn:hover {
+    background-color: #66BB6A; /* Dunkleres Grün beim Hover */
 }
 
 /* Druckstile */
