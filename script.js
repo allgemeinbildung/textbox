@@ -1,4 +1,5 @@
 // File: allgemeinbildung-textbox/script.js
+
 // Funktion zum Abrufen eines Abfrageparameters nach Name
 function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -58,7 +59,7 @@ const assignmentInfo = document.getElementById('assignmentInfo');
 // Anpassung: Verwende einen case-insensitive regulären Ausdruck
 const assignmentSuffix = assignmentId.replace(/^assignment[_-]?/i, '');
 
-// Setze den Text auf 'Aufgabe: {Suffix}'
+// Setze den Text auf 'Aufgabe: {Suffix}', falls assignmentInfo existiert
 if (assignmentInfo) {
     assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Aufgabe';
 }
@@ -76,6 +77,18 @@ if (document.getElementById('answerBox')) {
                 ['clean']
             ]
         }
+    });
+
+    // Importiere Delta korrekt
+    const Delta = Quill.import('delta');
+    quill.clipboard.addMatcher(Node.ELEMENT_NODE, function(node, delta) {
+        return new Delta(); // Leerer Delta, keine Änderungen werden eingefügt
+    });
+
+    // Alternative Methode: Event Listener zum Blockieren des Paste-Events
+    quill.root.addEventListener('paste', function(e) {
+        e.preventDefault();
+        alert("Einfügen von Inhalten ist in diesem Editor deaktiviert.");
     });
 }
 
@@ -98,11 +111,10 @@ function displaySavedAnswer(content) {
     savedAnswerContainer.style.display = 'block';
 }
 
-// Funktion zum Kopieren von Text in die Zwischenablage (wird noch für einzelne Kopien verwendet)
+// Funktion zum Kopieren von Text in die Zwischenablage
 function copyTextToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(function() {
-            // Bestätigung entfernen
             console.log("Text erfolgreich kopiert");
         }, function(err) {
             console.error('Fehler beim Kopieren des Textes: ', err);
@@ -128,14 +140,12 @@ function fallbackCopyTextToClipboard(text) {
     try {
         const successful = document.execCommand('copy');
         if (successful) {
-            // Bestätigung entfernen
             console.log("Text erfolgreich kopiert (Fallback)");
         } else {
             throw new Error("Fallback-Kopieren nicht erfolgreich");
         }
     } catch (err) {
         console.error('Fehler beim Kopieren des Textes (Fallback): ', err);
-        // Bestätigung entfernen
     }
 
     document.body.removeChild(textarea);
@@ -147,13 +157,11 @@ function saveToLocal() {
     const htmlContent = quill.root.innerHTML;
     const textContent = quill.getText().trim();
     if (textContent === "") {
-        // Bestätigung entfernen
         console.log("Versuch, mit leerem Textfeld zu speichern");
         return;
     }
     const storageKey = STORAGE_PREFIX + assignmentId;
     localStorage.setItem(storageKey, htmlContent);
-    // Bestätigung entfernen
     console.log(`Text für ${storageKey} gespeichert`);
     displaySavedAnswer(htmlContent); // Aktualisiere die Anzeige des gespeicherten Textes
     showSaveIndicator(); // Zeige den "Gespeichert"-Hinweis
@@ -162,7 +170,6 @@ function saveToLocal() {
 
 // Funktion zum Löschen aller gespeicherten Texte aus localStorage
 function clearLocalStorage() {
-    // Bestätigung entfernen
     // Entferne nur Schlüssel mit dem boxsuk-Präfix
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -200,7 +207,7 @@ function bulkDeleteAnswers() {
     loadAllAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
 }
 
-// Neue Funktion zum Drucken einer einzelnen Antwort
+// Funktion zum Drucken einer einzelnen Antwort
 function printSingleAnswer(title, content) {
     // Entferne vorhandenes printSingleContent, falls vorhanden
     const existingPrintDiv = document.getElementById('printSingleContent');
@@ -246,7 +253,7 @@ function printSingleAnswer(title, content) {
     window.print();
 }
 
-// Neue Funktion zum Drucken aller Antworten
+// Funktion zum Drucken aller Antworten
 function printAllAnswers(allContent) {
     // Entferne vorhandenes printAllContent, falls vorhanden
     const existingPrintDiv = document.getElementById('printAllContent');
@@ -283,55 +290,6 @@ function printAllAnswers(allContent) {
 
     // Trigger den Druck
     window.print();
-}
-
-// Funktion zum Kopieren einer einzelnen Antwort (entfernt, da "Antwort kopieren" Button entfernt wurde)
-// Diese Funktion wird nicht mehr benötigt und kann entfernt werden
-
-// Funktion zum Kopieren als Fallback
-function fallbackCopyTextToClipboard(text) {
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    // Verstecke das textarea Element
-    textarea.style.position = "fixed";
-    textarea.style.top = "-9999px";
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-
-    try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-            alert("Antwort wurde in die Zwischenablage kopiert.");
-            console.log("Antwort erfolgreich kopiert (Fallback)");
-        } else {
-            throw new Error("Fallback copy unsuccessful");
-        }
-    } catch (err) {
-        console.error('Fehler beim Kopieren der Antwort (Fallback): ', err);
-        alert("Fehler beim Kopieren der Antwort.");
-    }
-
-    document.body.removeChild(textarea);
-}
-
-// Funktion zum Löschen einer einzelnen Antwort
-function deleteAnswer(assignmentId) {
-    if(confirm("Sind Sie sicher, dass Sie diese Antwort löschen möchten?")) {
-        localStorage.removeItem(assignmentId);
-        alert("Antwort wurde gelöscht.");
-        console.log(`Antwort für ${assignmentId} gelöscht.`);
-        loadAllAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
-    }
-}
-
-// Funktion zum Aktivieren/Deaktivieren der Bulk Delete Schaltfläche
-function toggleBulkDeleteButton() {
-    const selected = document.querySelectorAll(".select-answer:checked").length;
-    const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
-    if (bulkDeleteBtn) {
-        bulkDeleteBtn.disabled = selected === 0;
-    }
 }
 
 // Funktion zum Anzeigen des "Gespeichert"-Hinweises
@@ -559,9 +517,6 @@ if (document.getElementById("bulkDeleteBtn")) {
     document.getElementById("bulkDeleteBtn").addEventListener('click', bulkDeleteAnswers);
 }
 
-// Funktion zum Kopieren einer einzelnen Antwort (entfernt, da "Antwort kopieren" Button entfernt wurde)
-// Diese Funktion wird nicht mehr benötigt und kann entfernt werden
-
 // Funktion zum Kopieren als Fallback
 function fallbackCopyTextToClipboard(text) {
     const textarea = document.createElement("textarea");
@@ -576,68 +531,32 @@ function fallbackCopyTextToClipboard(text) {
     try {
         const successful = document.execCommand('copy');
         if (successful) {
-            alert("Antwort wurde in die Zwischenablage kopiert.");
-            console.log("Antwort erfolgreich kopiert (Fallback)");
+            console.log("Text erfolgreich kopiert (Fallback)");
         } else {
             throw new Error("Fallback copy unsuccessful");
         }
     } catch (err) {
         console.error('Fehler beim Kopieren der Antwort (Fallback): ', err);
-        alert("Fehler beim Kopieren der Antwort.");
     }
 
     document.body.removeChild(textarea);
 }
 
-// Funktion zum Kopieren einer einzelnen Antwort
+// Funktion zum Löschen einer einzelnen Antwort
+function deleteAnswer(assignmentId) {
+    if(confirm("Sind Sie sicher, dass Sie diese Antwort löschen möchten?")) {
+        localStorage.removeItem(assignmentId);
+        alert("Antwort wurde gelöscht.");
+        console.log(`Antwort für ${assignmentId} gelöscht.`);
+        loadAllAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
+    }
+}
+
+// Funktion zum Kopieren einer einzelnen Antwort (falls benötigt in anderen Seiten)
 function copyAnswer(assignmentId) {
     const content = localStorage.getItem(assignmentId);
     if (content) {
         copyTextToClipboard(content);
-    }
-}
-
-// Funktion zum Anzeigen des "Gespeichert"-Hinweises
-function showSaveIndicator() {
-    if (!saveIndicator) return;
-    saveIndicator.style.display = 'block';
-    saveIndicator.style.backgroundColor = 'green'; // Set background color to green
-    saveIndicator.style.color = 'white'; // Set text color to white for better contrast
-    setTimeout(() => {
-        saveIndicator.style.display = 'none';
-    }, 2000); // Verstecken nach 2 Sekunden
-}
-
-// Debounce-Funktion zur Begrenzung der Ausführungsrate
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
-// Debounced-Version von saveToLocal (z.B. speichert 2 Sekunden nachdem der Benutzer aufgehört hat zu tippen)
-const debouncedSave = debounce(saveToLocal, 2000);
-
-// Event Listener für Textänderungen zur automatischen Speicherung
-if (quill) {
-    quill.on('text-change', function(delta, oldDelta, source) {
-        if (source === 'user') { // Stelle sicher, dass die Änderung vom Benutzer stammt
-            debouncedSave();
-        }
-    });
-}
-
-// Lade gespeicherten Inhalt und setze ihn im Quill-Editor
-if (quill) {
-    const savedText = localStorage.getItem(STORAGE_PREFIX + assignmentId);
-    if (savedText) {
-        quill.root.innerHTML = savedText;
-        console.log(`Gespeicherten Text für ${STORAGE_PREFIX + assignmentId} geladen`);
-        displaySavedAnswer(savedText);
-    } else {
-        console.log(`Kein gespeicherter Text für ${STORAGE_PREFIX + assignmentId} gefunden`);
     }
 }
 
@@ -651,20 +570,6 @@ console.log("Initialer Zustand von localStorage:");
 for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     console.log(`${key}: ${localStorage.getItem(key)}`);
-}
-
-// Funktion zum Verhindern des Pestens in den Quill-Editor
-if (quill) {
-    const Delta = Quill.import('delta');
-    quill.clipboard.addMatcher(Node.ELEMENT_NODE, function(node, delta) {
-        return new Delta(); // Leerer Delta, keine Änderungen werden eingefügt
-    });
-
-    // Alternative Methode: Event Listener zum Blockieren des Paste-Events
-    quill.root.addEventListener('paste', function(e) {
-        e.preventDefault();
-        alert("Einfügen von Inhalten ist in diesem Editor deaktiviert.");
-    });
 }
 
 // Event Listener für den neuen "Export als TXT" Button
