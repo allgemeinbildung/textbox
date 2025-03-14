@@ -4,42 +4,22 @@
     <meta charset="UTF-8">
     <title>Alle Antworten drucken / Als PDF speichern</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            text-align: center;
-        }
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #4CAF50; /* Grün */
-            color: white;
-            border: none;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-            margin: 5px; /* Abstand zwischen den Buttons */
-        }
-        button:hover {
-            background-color: #45a049; /* Dunkleres Grün beim Hover */
-        }
-        #downloadAllTxtBtn {
-            background-color: #6a1b9a; /* Lila */
-            color: #ffffff; /* Weißer Text */
-        }
-        #downloadAllTxtBtn:hover {
-            background-color: #8e24aa; /* Helleres Lila beim Hover */
-        }
-        .message {
+        /* Existing styles... */
+        
+        /* Add styles for subID containers */
+        .subid-container {
             margin-top: 20px;
-            font-size: 14px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+
+        .subid-container h4 {
             color: #555;
+            margin-bottom: 10px;
+        }
+
+        .subid-content {
+            margin-left: 15px;
         }
     </style>
 </head>
@@ -56,15 +36,59 @@
             const STORAGE_PREFIX = 'boxsuk-assignment_';
             const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_PREFIX));
             const answers = [];
+            
+            // Group answers by parent ID (if they have a parent)
+            const groupedAnswers = {};
 
             storageKeys.forEach(key => {
                 const htmlContent = localStorage.getItem(key);
                 if (htmlContent) {
                     const assignmentId = key.replace(STORAGE_PREFIX, '');
+                    
+                    // Check if this is a subID (contains a parent reference)
+                    const parentMatch = assignmentId.match(/^(.+)_sub_(.+)$/);
+                    
+                    if (parentMatch) {
+                        // This is a subID
+                        const parentId = parentMatch[1];
+                        const subId = parentMatch[2];
+                        
+                        if (!groupedAnswers[parentId]) {
+                            groupedAnswers[parentId] = {
+                                id: parentId,
+                                subIds: []
+                            };
+                        }
+                        
+                        groupedAnswers[parentId].subIds.push({
+                            id: subId,
+                            content: htmlContent
+                        });
+                    } else {
+                        // This is a regular answer
+                        answers.push({
+                            id: assignmentId,
+                            content: htmlContent
+                        });
+                    }
+                }
+            });
+            
+            // Add grouped answers to the main answers array
+            Object.values(groupedAnswers).forEach(group => {
+                // Check if we have the parent content
+                const parentKey = STORAGE_PREFIX + group.id;
+                const parentContent = localStorage.getItem(parentKey);
+                
+                if (parentContent) {
                     answers.push({
-                        id: assignmentId,
-                        content: htmlContent
+                        id: group.id,
+                        content: parentContent,
+                        subIds: group.subIds
                     });
+                } else {
+                    // If no parent content, just add the group with subIds
+                    answers.push(group);
                 }
             });
 
@@ -84,6 +108,17 @@
             answers.forEach(answer => {
                 allContent += `<h2>Aufgabe ${answer.id}</h2>`;
                 allContent += `<div>${answer.content}</div>`;
+                
+                // Add subIDs content if available
+                if (answer.subIds && answer.subIds.length > 0) {
+                    answer.subIds.forEach(subId => {
+                        allContent += `<div class="subid-container">`;
+                        allContent += `<h4>Teil: ${subId.id}</h4>`;
+                        allContent += `<div class="subid-content">${subId.content}</div>`;
+                        allContent += `</div>`;
+                    });
+                }
+                
                 allContent += `<hr>`;
             });
 
@@ -95,7 +130,10 @@
                     <style>
                         body { font-family: Arial, sans-serif; padding: 20px; }
                         h2 { color: #003f5c; }
+                        h4 { color: #555; margin-top: 15px; }
                         hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
+                        .subid-container { margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; }
+                        .subid-content { margin-left: 15px; }
                     </style>
                 </head>
                 <body>${allContent}</body>
@@ -121,6 +159,9 @@
 
             let txtContent = '';
             answers.forEach(answer => {
+                txtContent += `Aufgabe ${answer.id}\n\n`;
+                
+                // Convert main content
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = answer.content;
                 
@@ -131,7 +172,30 @@
                     .replace(/<[^>]+>/g, "");
                     
                 plainText = plainText.replace(/\n\s*\n/g, '\n\n').trim();
-                txtContent += `Aufgabe ${answer.id}\n${plainText}\nURL: ${window.location.href}\nAssignment ID: ${answer.id}\n\n`;
+                txtContent += plainText + '\n\n';
+                
+                // Add subIDs content if available
+                if (answer.subIds && answer.subIds.length > 0) {
+                    answer.subIds.forEach(subId => {
+                        txtContent += `Teil: ${subId.id}\n\n`;
+                        
+                        // Convert subID content
+                        const subTempDiv = document.createElement('div');
+                        subTempDiv.innerHTML = subId.content;
+                        
+                        let subPlainText = subTempDiv.innerHTML
+                            .replace(/<\/div>/gi, "\n")
+                            .replace(/<br>/gi, "\n")
+                            .replace(/<\/p>/gi, "\n\n")
+                            .replace(/<[^>]+>/g, "");
+                            
+                        subPlainText = subPlainText.replace(/\n\s*\n/g, '\n\n').trim();
+                        txtContent += subPlainText + '\n\n';
+                    });
+                }
+                
+                txtContent += `URL: ${window.location.href}\nAssignment ID: ${answer.id}\n\n`;
+                txtContent += '----------------------------------------\n\n';
             });
 
             const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
