@@ -71,7 +71,7 @@ const assignmentSuffix = assignmentId.replace(/^assignment[_-]?/i, '');
 // Set the text content for assignmentInfo if it exists
 if (assignmentInfo) {
     const subText = subIds && subIds.length ? `, ${subIds.join(", ")}` : "";
-    assignmentInfo.textContent = assignmentSuffix ? `Kap.: ${assignmentSuffix}${subText}` : 'Aufgabe';
+    assignmentInfo.textContent = assignmentSuffix ? `Kap. ${assignmentSuffix}${subText}` : 'Aufgabe';
 }
 
 // Initialize the Quill editor if the element exists
@@ -152,8 +152,8 @@ function displaySavedAnswer(content) {
     
     // Combine parentTitle and assignmentSuffix, if available
     const titleText = parentTitle
-        ? `${parentTitle}\nKap.: ${assignmentSuffix}`
-        : `Kap.: ${assignmentSuffix}`;
+        ? `${parentTitle}\nKap. ${assignmentSuffix}`
+        : `Kap. ${assignmentSuffix}`;
     savedAssignmentTitle.textContent = titleText;
     
     // If subIds are provided, display main content and then each sub-content
@@ -527,8 +527,8 @@ if (document.getElementById("downloadAllBtn")) {
         console.log("Drucken der aktuellen Antwort wird initiiert");
 
         const titleText = parentTitle
-            ? `${parentTitle} - Kap.: ${assignmentSuffix}`
-            : `Kap.: ${assignmentSuffix}`;
+            ? `${parentTitle} - Kap. ${assignmentSuffix}`
+            : `Kap. ${assignmentSuffix}`;
 
         printSingleAnswer(titleText, savedText);
     });
@@ -624,7 +624,7 @@ if (exportTxtBtn) {
         if (subIds && subIds.length > 0 && window.loadedContents) {
             window.loadedContents.forEach(item => {
                 if (item.id === assignmentId) {
-                    allText += `Kap.: ${assignmentSuffix}\n\n`;
+                    allText += `Kap. ${assignmentSuffix}\n\n`;
                 } else {
                     allText += `Fragen: ${item.id}\n\n`;
                 }
