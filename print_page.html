@@ -32,6 +32,11 @@
     </div>
 
     <script>
+        function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+        }
+
         function getAllSavedAnswers() {
             const STORAGE_PREFIX = 'boxsuk-assignment_';
             // Ensure assignmentId is fetched from the query parameters.
