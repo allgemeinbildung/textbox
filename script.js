@@ -70,7 +70,8 @@ const assignmentSuffix = assignmentId.replace(/^assignment[_-]?/i, '');
 
 // Set the text content for assignmentInfo if it exists
 if (assignmentInfo) {
-    assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Aufgabe';
+    const subText = subIds && subIds.length ? `, ${subIds.join(", ")}` : "";
+    assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}${subText}` : 'Aufgabe';
 }
 
 // Initialize the Quill editor if the element exists
@@ -109,7 +110,7 @@ const saveIndicator = document.getElementById('saveIndicator');
 
 // Function to load and display content for a specific subId
 function loadSubIdContent(subId) {
-    const storageKey = STORAGE_PREFIX + subId;
+    const storageKey = STORAGE_PREFIX + assignmentId + "_sub_" + subId;
     const savedText = localStorage.getItem(storageKey);
     
     if (savedText) {
