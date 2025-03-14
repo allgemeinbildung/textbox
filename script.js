@@ -472,7 +472,7 @@ function loadAllAnswers() {
             const assignmentIdClean = assignmentIdMatch ? assignmentIdMatch[1] : assignmentIdKey;
 
             const title = document.createElement("h3");
-            title.textContent = `Aufgabe ${assignmentIdClean}`;
+            title.textContent = `Kapitel ${assignmentIdClean}`;
             draftDiv.appendChild(title);
 
             const answerDiv = document.createElement("div");

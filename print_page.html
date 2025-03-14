@@ -116,7 +116,7 @@
 
             let allContent = '';
             answers.forEach(answer => {
-                allContent += `<h2>Aufgabe ${answer.id}</h2>`;
+                allContent += `<h2>Kapitel ${answer.id}</h2>`;
                 allContent += `<div>${answer.content}</div>`;
                 
                 // Add subIDs content if available
@@ -169,7 +169,7 @@
 
             let txtContent = '';
             answers.forEach(answer => {
-                txtContent += `Aufgabe ${answer.id}\n\n`;
+                txtContent += `Kap. ${answer.id}\n\n`;
                 
                 // Convert main content
                 const tempDiv = document.createElement('div');
