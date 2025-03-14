@@ -515,21 +515,20 @@ function loadAllAnswers() {
 // Event listener for "Text drucken / Als PDF speichern" for the current answer
 if (document.getElementById("downloadAllBtn")) {
     document.getElementById("downloadAllBtn").addEventListener('click', function() {
-        const currentStorageKey = STORAGE_PREFIX + assignmentId;
+        const subKeyPart = subIds && subIds.length > 0 ? '_sub_' + subIds.join('_') : '';
+        const currentStorageKey = STORAGE_PREFIX + assignmentId + subKeyPart;
         const savedText = localStorage.getItem(currentStorageKey);
-
+        
         if (!savedText) {
             alert("Keine gespeicherte Antwort zum Drucken oder Speichern als PDF vorhanden.");
             console.log("Versuch, die aktuelle Antwort zu drucken, aber keine ist gespeichert");
             return;
         }
-
+        
         console.log("Drucken der aktuellen Antwort wird initiiert");
-
         const titleText = parentTitle
             ? `${parentTitle} - Kap. ${assignmentSuffix}`
             : `Kap. ${assignmentSuffix}`;
-
         printSingleAnswer(titleText, savedText);
     });
 }
