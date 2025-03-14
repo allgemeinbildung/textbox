@@ -238,7 +238,7 @@ function saveToLocal() {
         console.log("Versuch, mit leerem Textfeld zu speichern");
         return;
     }
-    const subKeyPart = subIds && subIds.length > 0 ? '_' + subIds.join('_') : '';
+    const subKeyPart = subIds && subIds.length > 0 ? '_sub_' + subIds.join('_') : '';
     const storageKey = STORAGE_PREFIX + assignmentId + subKeyPart;
     localStorage.setItem(storageKey, htmlContent);
     console.log(`Text für ${storageKey} gespeichert`);
@@ -403,7 +403,9 @@ if (quill) {
 
 // Load saved content and set it in the Quill editor
 if (quill) {
-    const savedText = localStorage.getItem(STORAGE_PREFIX + assignmentId);
+    const subKeyPart = subIds && subIds.length > 0 ? '_sub_' + subIds.join('_') : '';
+    const savedText = localStorage.getItem(STORAGE_PREFIX + assignmentId + subKeyPart);
+
     if (savedText) {
         quill.root.innerHTML = savedText;
         console.log(`Gespeicherten Text für ${STORAGE_PREFIX + assignmentId} geladen`);
