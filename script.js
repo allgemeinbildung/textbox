@@ -71,7 +71,7 @@ const assignmentSuffix = assignmentId.replace(/^assignment[_-]?/i, '');
 // Set the text content for assignmentInfo if it exists
 if (assignmentInfo) {
     const subText = subIds && subIds.length ? `, ${subIds.join(", ")}` : "";
-    assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}${subText}` : 'Aufgabe';
+    assignmentInfo.textContent = assignmentSuffix ? `Kap.: ${assignmentSuffix}${subText}` : 'Aufgabe';
 }
 
 // Initialize the Quill editor if the element exists
@@ -120,7 +120,7 @@ function loadSubIdContent(subId) {
         
         // Add a subheader with the subId
         const subHeader = document.createElement('h4');
-        subHeader.textContent = `Teil: ${subId}`;
+        subHeader.textContent = `Fragen: ${subId}`;
         subIdContainer.appendChild(subHeader);
         
         // Add the content
@@ -152,8 +152,8 @@ function displaySavedAnswer(content) {
     
     // Combine parentTitle and assignmentSuffix, if available
     const titleText = parentTitle
-        ? `${parentTitle}\nAufgabe: ${assignmentSuffix}`
-        : `Aufgabe: ${assignmentSuffix}`;
+        ? `${parentTitle}\nKap.: ${assignmentSuffix}`
+        : `Kap.: ${assignmentSuffix}`;
     savedAssignmentTitle.textContent = titleText;
     
     // If subIds are provided, display main content and then each sub-content
@@ -307,7 +307,7 @@ function printSingleAnswer(title, content) {
         window.loadedContents.forEach(item => {
             if (item.id !== assignmentId) {
                 const subHeader = document.createElement('h4');
-                subHeader.textContent = `Teil: ${item.id}`;
+                subHeader.textContent = `Fragen: ${item.id}`;
                 printDiv.appendChild(subHeader);
             }
             
@@ -500,7 +500,7 @@ function loadAllAnswers() {
                 const tempDivPrint = document.createElement('div');
                 tempDivPrint.innerHTML = text;
                 const plainTextPrint = tempDivPrint.innerText;
-                printSingleAnswer(`Aufgabe ${assignmentIdClean}`, plainTextPrint);
+                printSingleAnswer(`Kap. ${assignmentIdClean}`, plainTextPrint);
             });
             buttonGroup.appendChild(printBtn);
 
@@ -527,8 +527,8 @@ if (document.getElementById("downloadAllBtn")) {
         console.log("Drucken der aktuellen Antwort wird initiiert");
 
         const titleText = parentTitle
-            ? `${parentTitle} - Aufgabe: ${assignmentSuffix}`
-            : `Aufgabe: ${assignmentSuffix}`;
+            ? `${parentTitle} - Kap.: ${assignmentSuffix}`
+            : `Kap.: ${assignmentSuffix}`;
 
         printSingleAnswer(titleText, savedText);
     });
@@ -624,9 +624,9 @@ if (exportTxtBtn) {
         if (subIds && subIds.length > 0 && window.loadedContents) {
             window.loadedContents.forEach(item => {
                 if (item.id === assignmentId) {
-                    allText += `Aufgabe: ${assignmentSuffix}\n\n`;
+                    allText += `Kap.: ${assignmentSuffix}\n\n`;
                 } else {
-                    allText += `Teil: ${item.id}\n\n`;
+                    allText += `Fragen: ${item.id}\n\n`;
                 }
                 
                 const tempDiv = document.createElement('div');
