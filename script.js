@@ -238,7 +238,8 @@ function saveToLocal() {
         console.log("Versuch, mit leerem Textfeld zu speichern");
         return;
     }
-    const storageKey = STORAGE_PREFIX + assignmentId;
+    const subKeyPart = subIds && subIds.length > 0 ? '_' + subIds.join('_') : '';
+    const storageKey = STORAGE_PREFIX + assignmentId + subKeyPart;
     localStorage.setItem(storageKey, htmlContent);
     console.log(`Text für ${storageKey} gespeichert`);
     displaySavedAnswer(htmlContent);
