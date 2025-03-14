@@ -34,7 +34,10 @@
     <script>
         function getAllSavedAnswers() {
             const STORAGE_PREFIX = 'boxsuk-assignment_';
-            const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_PREFIX));
+            // Ensure assignmentId is fetched from the query parameters.
+            const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
+            // Filter keys to only include those matching the current assignment.
+            const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_PREFIX + assignmentId));
             const answers = [];
             
             // Group answers by parent ID (if they have a parent)
@@ -43,10 +46,11 @@
             storageKeys.forEach(key => {
                 const htmlContent = localStorage.getItem(key);
                 if (htmlContent) {
-                    const assignmentId = key.replace(STORAGE_PREFIX, '');
+                    // Remove the prefix to get the assignment identifier with potential subId parts.
+                    const currentId = key.replace(STORAGE_PREFIX, '');
                     
                     // Check if this is a subID (contains a parent reference)
-                    const parentMatch = assignmentId.match(/^(.+)_sub_(.+)$/);
+                    const parentMatch = currentId.match(/^(.+)_sub_(.+)$/);
                     
                     if (parentMatch) {
                         // This is a subID
@@ -67,7 +71,7 @@
                     } else {
                         // This is a regular answer
                         answers.push({
-                            id: assignmentId,
+                            id: currentId,
                             content: htmlContent
                         });
                     }
@@ -94,6 +98,7 @@
 
             return answers;
         }
+
 
         function printAllAnswers() {
             const answers = getAllSavedAnswers();
