@@ -424,13 +424,3 @@ summary::after {
         display: none;
     }
 }
-
-/* Hide assignment info on screen, show only in print */
-#assignmentInfo {
-    display: none;
-}
-@media print {
-    #assignmentInfo {
-        display: block;
-    }
-}

@@ -116,24 +116,24 @@
 
             let allContent = '';
             answers.forEach(answer => {
-                allContent += `<h2>Kapitel ${answer.id}</h2>`;
-                allContent += `<div>${answer.content}</div>`;
+                allContent += <h2>Kapitel ${answer.id}</h2>;
+                allContent += <div>${answer.content}</div>;
                 
                 // Add subIDs content if available
                 if (answer.subIds && answer.subIds.length > 0) {
                     answer.subIds.forEach(subId => {
-                        allContent += `<div class="subid-container">`;
-                        allContent += `<h4>Fragen: ${subId.id}</h4>`;
-                        allContent += `<div class="subid-content">${subId.content}</div>`;
-                        allContent += `</div>`;
+                        allContent += <div class="subid-container">;
+                        allContent += <h4>Fragen: ${subId.id}</h4>;
+                        allContent += <div class="subid-content">${subId.content}</div>;
+                        allContent += </div>;
                     });
                 }
                 
-                allContent += `<hr>`;
+                allContent += <hr>;
             });
 
             const printWindow = window.open('', '', 'height=800,width=800');
-            printWindow.document.write(`
+            printWindow.document.write(
                 <html>
                 <head>
                     <title>Alle Antworten</title>
@@ -148,7 +148,7 @@
                 </head>
                 <body>${allContent}</body>
                 </html>
-            `);
+            );
             printWindow.document.close();
             
             printWindow.onload = function() {
@@ -169,7 +169,7 @@
 
             let txtContent = '';
             answers.forEach(answer => {
-                txtContent += `Kap. ${answer.id}\n\n`;
+                txtContent += Kap. ${answer.id}\n\n;
                 
                 // Convert main content
                 const tempDiv = document.createElement('div');
@@ -187,7 +187,7 @@
                 // Add subIDs content if available
                 if (answer.subIds && answer.subIds.length > 0) {
                     answer.subIds.forEach(subId => {
-                        txtContent += `Fragen: ${subId.id}\n\n`;
+                        txtContent += Fragen: ${subId.id}\n\n;
                         
                         // Convert subID content
                         const subTempDiv = document.createElement('div');
@@ -204,7 +204,7 @@
                     });
                 }
                 
-                txtContent += `URL: ${window.location.href}\nAssignment ID: ${answer.id}\n\n`;
+                txtContent += URL: ${window.location.href}\nAssignment ID: ${answer.id}\n\n;
                 txtContent += '----------------------------------------\n\n';
             });
 
