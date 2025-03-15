@@ -40,24 +40,60 @@
     <div class="container">
         <h3>Alle gespeicherten Antworten Drucken</h3>
         <button id="printAllBtn">Alle Antworten drucken / Als PDF speichern</button>
-        <!-- Removed TXT export button -->
         <!-- New button for printing assignments grouped by subIds -->
         <button id="printAllSubIdsBtn">Alle Themen nach Aufgaben gruppiert drucken</button>
         <div class="message" id="message"></div>
     </div>
 
     <script>
+        // Constants for storage keys
+        const STORAGE_PREFIX = 'boxsuk-assignment_';
+        const SUB_STORAGE_PREFIX = 'boxsuk-sub_';
+        const QUESTIONS_PREFIX = 'boxsuk-questions_';
+
+        // Helper function to get questions from localStorage for a specific subId
+        function getQuestionsFromStorage(assignmentId, subId) {
+            const storageKey = `${QUESTIONS_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`;
+            const storedQuestions = localStorage.getItem(storageKey);
+            
+            if (storedQuestions) {
+                try {
+                    return JSON.parse(storedQuestions);
+                } catch (e) {
+                    console.error(`Error parsing questions for ${subId}:`, e);
+                    return {};
+                }
+            }
+            
+            return {};
+        }
+
+        // Helper function to get questions HTML from localStorage
+        function getQuestionsHtmlFromStorage(assignmentId, subId) {
+            const questions = getQuestionsFromStorage(assignmentId, subId);
+            
+            if (Object.keys(questions).length > 0) {
+                let html = '<div class="questions-print"><em>';
+                Object.values(questions).forEach(question => {
+                    html += `<div>- ${question}</div>`;
+                });
+                html += '</em></div>';
+                return html;
+            }
+            
+            return '';
+        }
+
         function getAllSavedAnswers() {
-            const STORAGE_PREFIX = 'boxsuk-assignment_';
             const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_PREFIX));
             const answers = [];
 
             storageKeys.forEach(key => {
                 const htmlContent = localStorage.getItem(key);
                 if (htmlContent) {
-                    const assignmentId = key.replace(STORAGE_PREFIX, '');
+                    const keyWithoutPrefix = key.replace(STORAGE_PREFIX, '');
                     answers.push({
-                        id: assignmentId,
+                        id: keyWithoutPrefix,
                         content: htmlContent
                     });
                 }
@@ -76,7 +112,27 @@
 
             let allContent = '';
             answers.forEach(answer => {
-                allContent += `<h2>Aufgabe ${answer.id}</h2>`;
+                const isSubAssignment = answer.id.includes(`_${SUB_STORAGE_PREFIX}`);
+                
+                if (isSubAssignment) {
+                    // Extract assignmentId and subId
+                    const [assignmentId, subIdWithPrefix] = answer.id.split(`_${SUB_STORAGE_PREFIX}`);
+                    const subId = subIdWithPrefix;
+                    
+                    // Get questions for this sub-assignment
+                    const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId);
+                    
+                    allContent += `<h2>Kapitel: ${assignmentId}</h2>`;
+                    allContent += `<h3>Thema: ${subId}</h3>`;
+                    
+                    if (questionsHtml) {
+                        allContent += questionsHtml;
+                    }
+                } else {
+                    // Simple assignment without subId
+                    allContent += `<h2>Aufgabe: ${answer.id}</h2>`;
+                }
+                
                 allContent += `<div>${answer.content}</div>`;
                 allContent += `<hr>`;
             });
@@ -89,7 +145,15 @@
                     <style>
                         body { font-family: Arial, sans-serif; padding: 20px; }
                         h2 { color: #003f5c; }
+                        h3 { color: #2f4b7c; }
                         hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
+                        .questions-print { 
+                            margin-bottom: 15px;
+                            font-style: italic;
+                        }
+                        .questions-print div {
+                            margin-bottom: 5px;
+                        }
                     </style>
                 </head>
                 <body>${allContent}</body>
@@ -103,20 +167,23 @@
             };
         }
 
-        // New function: Print all assignments grouped by subIds
+        // Print all assignments grouped by assignmentId
         function printAllAssignmentsWithSubIds() {
-            const STORAGE_PREFIX = 'boxsuk-assignment_';
-            const SUB_STORAGE_PREFIX = 'boxsuk-sub_';
             const messageEl = document.getElementById('message');
             
             // Collect assignment keys (ignoring subId parts)
             const assignmentKeys = new Set();
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith(STORAGE_PREFIX)) {
-                    const assignmentPart = key.includes(SUB_STORAGE_PREFIX)
-                        ? key.split('_' + SUB_STORAGE_PREFIX)[0]
-                        : key;
-                    assignmentKeys.add(assignmentPart);
+                    const keyWithoutPrefix = key.replace(STORAGE_PREFIX, '');
+                    const isSubAssignment = keyWithoutPrefix.includes(`_${SUB_STORAGE_PREFIX}`);
+                    
+                    if (isSubAssignment) {
+                        const assignmentId = keyWithoutPrefix.split(`_${SUB_STORAGE_PREFIX}`)[0];
+                        assignmentKeys.add(assignmentId);
+                    } else {
+                        assignmentKeys.add(keyWithoutPrefix);
+                    }
                 }
             });
             
@@ -126,31 +193,38 @@
             }
             
             let allContent = '';
-            Array.from(assignmentKeys).sort().forEach(assignmentKey => {
-                const assignmentId = assignmentKey.replace(STORAGE_PREFIX, '');
+            Array.from(assignmentKeys).sort().forEach(assignmentId => {
                 allContent += `<h2>Kapitel: ${assignmentId}</h2>`;
                 
-                const subIdPrefix = `${assignmentKey}_${SUB_STORAGE_PREFIX}`;
-                const subIdKeys = Object.keys(localStorage).filter(key => key.startsWith(subIdPrefix));
+                // Find all subIds for this assignmentId
+                const subStoragePrefix = `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
+                const subStorageKeys = Object.keys(localStorage).filter(key => key.startsWith(subStoragePrefix));
                 
-                if (subIdKeys.length > 0) {
-                    subIdKeys.sort((a, b) => {
-                        const subIdA = a.replace(subIdPrefix, '');
-                        const subIdB = b.replace(subIdPrefix, '');
-                        return subIdA.localeCompare(subIdB);
-                    });
+                if (subStorageKeys.length > 0) {
+                    // Sort subIds
+                    subStorageKeys.sort();
                     
-                    subIdKeys.forEach(subIdKey => {
-                        const content = localStorage.getItem(subIdKey);
-                        if (content) {
-                            const subId = subIdKey.replace(subIdPrefix, '');
-                            allContent += `<h3>Thema: ${subId}</h3>`;
-                            allContent += `<div>${content}</div>`;
-                            allContent += `<hr>`;
+                    subStorageKeys.forEach(subKey => {
+                        const content = localStorage.getItem(subKey);
+                        if (!content) return;
+                        
+                        const subId = subKey.replace(subStoragePrefix, '');
+                        const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId);
+                        
+                        allContent += `<h3>Thema: ${subId}</h3>`;
+                        
+                        if (questionsHtml) {
+                            allContent += questionsHtml;
                         }
+                        
+                        allContent += `<div>${content}</div>`;
+                        allContent += `<hr>`;
                     });
                 } else {
-                    const content = localStorage.getItem(assignmentKey);
+                    // No subIds, display the main assignment if it exists
+                    const mainAssignmentKey = `${STORAGE_PREFIX}${assignmentId}`;
+                    const content = localStorage.getItem(mainAssignmentKey);
+                    
                     if (content) {
                         allContent += `<div>${content}</div>`;
                         allContent += `<hr>`;
