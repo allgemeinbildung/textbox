@@ -366,7 +366,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (buttonContainer) {
         const printAllSubIdsBtn = document.createElement('button');
         printAllSubIdsBtn.id = 'printAllSubIdsBtn';
-        printAllSubIdsBtn.textContent = 'Alle Themen dieser Aufgabe drucken';
+        printAllSubIdsBtn.textContent = 'Alle Aufgabe drucken';
         printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment);
         buttonContainer.appendChild(printAllSubIdsBtn);
     }
