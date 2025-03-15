@@ -1,26 +1,23 @@
 <!-- File: allgemeinbildung-textbox/answers.html -->
-<!DOCTYPE html> 
-
+<!DOCTYPE html>
 <html lang="de">
-
 <head>
     <meta charset="UTF-8">
     <title>Antworten speichern und drucken</title>
     <!-- Quill CSS -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-
     <!-- Externe CSS-Datei -->
     <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
     <!-- Bereich zum Drucken eines einzelnen Textes -->
     <div id="printContent">
         <!-- Gespeichert-Indikator -->
         <div id="saveIndicator">Gespeichert</div>
-
         <h3>Dein Text:</h3>
         <p id="assignmentInfo"></p>
+        <!-- New subId info section -->
+        <div id="subIdInfo" class="sub-id-info"></div>
         <div id="answerBox" class="quill-editor"></div>
         <pre id="answerText" style="display: none;"></pre>
     </div>
@@ -64,9 +61,7 @@
     
     <!-- Quill JS -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-
     <!-- Externe JavaScript-Datei -->
     <script src="script.js"></script>
 </body>
-
 </html>

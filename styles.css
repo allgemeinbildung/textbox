@@ -155,6 +155,16 @@ button:hover {
     cursor: not-allowed;
 }
 
+/* Style for the new print all subIds button */
+#printAllSubIdsBtn {
+    background-color: #673AB7; /* Purple */
+    color: white;
+}
+#printAllSubIdsBtn:hover {
+    background-color: #5E35B1; /* Darker purple on hover */
+}
+
+
 /* Anzeige der gespeicherten Antwort */
 #savedAnswerContainer {
     margin-top: 20px;

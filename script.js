@@ -1,68 +1,52 @@
-// Funktion zum Abrufen eines Abfrageparameters nach Name
-function getQueryParam(param) {
+// Funktion zum Abrufen von URL-Parametern (unterstützt Arrays)
+function getQueryParams() {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
+    const params = {};
+    for (const [key, value] of urlParams.entries()) {
+        if (key === 'subIds' || key.startsWith('question')) {
+            if (!params[key]) {
+                params[key] = [];
+            }
+            params[key].push(value);
+        } else {
+            params[key] = value;
+        }
+    }
+    return params;
 }
 
-// Funktion zum Extrahieren des Seitentitels aus der Referrer-URL
-function getParentPageTitle() {
-    const referrer = document.referrer;
-    if (!referrer) {
-        console.warn('Kein Referrer gefunden. Der übergeordnete Seitentitel kann nicht abgerufen werden.');
-        return '';
-    }
-
-    try {
-        const url = new URL(referrer);
-        const pathSegments = url.pathname.split('/').filter(segment => segment.length > 0);
-
-        // Suche nach dem Segment 'allgemeinbildung'
-        const targetSegment = 'allgemeinbildung';
-        const targetIndex = pathSegments.indexOf(targetSegment);
-
-        if (targetIndex === -1) {
-            console.warn(`Segment '${targetSegment}' wurde im Pfad der Referrer-URL nicht gefunden.`);
-            return '';
-        }
-
-        // Extrahiere alle Segmente nach 'allgemeinbildung'
-        const relevantSegments = pathSegments.slice(targetIndex + 1);
-
-        if (relevantSegments.length === 0) {
-            console.warn('Keine Pfadsegmente nach dem Zielsegment gefunden.');
-            return '';
-        }
-
-        // Ersetze '+', '-', '_' durch Leerzeichen und dekodiere URI-Komponenten
-        const formattedSegments = relevantSegments.map(segment => {
-            return decodeURIComponent(segment.replace(/[-_+]/g, ' ')).replace(/\b\w/g, char => char.toUpperCase());
-        });
-
-        // Verbinde die Segmente mit ' - ' als Trenner
-        const formattedTitle = formattedSegments.join(' - ');
-
-        return formattedTitle;
-    } catch (e) {
-        console.error('Fehler beim Parsen der Referrer-URL:', e);
-        return '';
-    }
+// Aktualisierte Funktion zur Abfrage eines Parameters
+function getQueryParam(param) {
+    return getQueryParams()[param];
 }
 
-const STORAGE_PREFIX = 'boxsuk-assignment_'; // Eindeutiger Präfix für boxsuk
+// Funktion, um die aktuelle subId und zugehörige Fragen zu erhalten
+function getCurrentSubIdAndQuestions() {
+    const params = getQueryParams();
+    const subId = params.subIds ? params.subIds[0] : null;
+    const questions = {};
+    Object.keys(params).forEach(key => {
+        if (key.startsWith('question') && params[key]) {
+            questions[key] = params[key][0];
+        }
+    });
+    return { subId, questions };
+}
+
+const STORAGE_PREFIX = 'boxsuk-assignment_';
+const SUB_STORAGE_PREFIX = 'boxsuk-sub_';
+
+// Setze den assignmentId und extrahiere das Suffix
 const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
 const parentTitle = getParentPageTitle();
 const assignmentInfo = document.getElementById('assignmentInfo');
 
-// Entferne das Präfix 'assignment', um das Suffix zu erhalten
-// Anpassung: Verwende einen case-insensitive regulären Ausdruck
 const assignmentSuffix = assignmentId.replace(/^assignment[_-]?/i, '');
-
-// Setze den Text auf 'Aufgabe: {Suffix}', falls assignmentInfo existiert
 if (assignmentInfo) {
     assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Aufgabe';
 }
 
-// Initialisiere den Quill-Editor, falls das Element existiert
+// Initialisiere den Quill-Editor
 let quill;
 if (document.getElementById('answerBox')) {
     quill = new Quill('#answerBox', {
@@ -80,32 +64,41 @@ if (document.getElementById('answerBox')) {
     // Importiere Delta korrekt
     const Delta = Quill.import('delta');
     quill.clipboard.addMatcher(Node.ELEMENT_NODE, function(node, delta) {
-        return new Delta(); // Leerer Delta, keine Änderungen werden eingefügt
+        return new Delta();
     });
 
-    // Alternative Methode: Event Listener zum Blockieren des Paste-Events
     quill.root.addEventListener('paste', function(e) {
         e.preventDefault();
         alert("Einfügen von Inhalten ist in diesem Editor deaktiviert.");
     });
 }
 
-// Anzeigeelemente
 const savedAnswerContainer = document.getElementById('savedAnswerContainer');
 const savedAssignmentTitle = document.getElementById('savedAssignmentTitle');
 const savedAnswer = document.getElementById('savedAnswer');
-const saveIndicator = document.getElementById('saveIndicator'); // Save Indicator Element
+const saveIndicator = document.getElementById('saveIndicator');
 
-// Funktion zur Anzeige des gespeicherten Textes
+// Funktion zum Anzeigen des gespeicherten Textes inkl. subId und Fragen
 function displaySavedAnswer(content) {
     if (!savedAssignmentTitle || !savedAnswer || !savedAnswerContainer) return;
-    // Kombiniere parentTitle und assignmentSuffix, falls verfügbar
-    const titleText = parentTitle
+    const { subId, questions } = getCurrentSubIdAndQuestions();
+    let titleText = parentTitle
         ? `${parentTitle}\nAufgabe: ${assignmentSuffix}`
         : `Aufgabe: ${assignmentSuffix}`;
+    if (subId) {
+        titleText += `\nThema: ${subId}`;
+    }
     savedAssignmentTitle.textContent = titleText;
-    // Verwenden Sie innerHTML, um die Formatierung beizubehalten
-    savedAnswer.innerHTML = content;
+
+    let questionsHtml = '';
+    if (Object.keys(questions).length > 0) {
+        questionsHtml += '<div class="questions-container"><em>';
+        Object.values(questions).forEach(question => {
+            questionsHtml += `<div>- ${question}</div>`;
+        });
+        questionsHtml += '</em></div>';
+    }
+    savedAnswer.innerHTML = questionsHtml + content;
     savedAnswerContainer.style.display = 'block';
 }
 
@@ -119,22 +112,18 @@ function copyTextToClipboard(text) {
             fallbackCopyTextToClipboard(text);
         });
     } else {
-        // Fallback zu execCommand
         fallbackCopyTextToClipboard(text);
     }
 }
 
-// Funktion zum Kopieren von Text in die Zwischenablage (Fallback)
 function fallbackCopyTextToClipboard(text) {
     const textarea = document.createElement("textarea");
     textarea.value = text;
-    // Verstecke das Textarea-Element
     textarea.style.position = "fixed";
     textarea.style.top = "-9999px";
     document.body.appendChild(textarea);
     textarea.focus();
     textarea.select();
-
     try {
         const successful = document.execCommand('copy');
         if (successful) {
@@ -145,11 +134,10 @@ function fallbackCopyTextToClipboard(text) {
     } catch (err) {
         console.error('Fehler beim Kopieren des Textes (Fallback): ', err);
     }
-
     document.body.removeChild(textarea);
 }
 
-// Funktion zum Speichern des Textes in localStorage
+// Funktion zum Speichern des Textes in localStorage (mit subId)
 function saveToLocal() {
     if (!quill) return;
     const htmlContent = quill.root.innerHTML;
@@ -158,17 +146,19 @@ function saveToLocal() {
         console.log("Versuch, mit leerem Textfeld zu speichern");
         return;
     }
-    const storageKey = STORAGE_PREFIX + assignmentId;
+    const { subId } = getCurrentSubIdAndQuestions();
+    const storageKey = subId 
+        ? `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`
+        : `${STORAGE_PREFIX}${assignmentId}`;
     localStorage.setItem(storageKey, htmlContent);
     console.log(`Text für ${storageKey} gespeichert`);
-    displaySavedAnswer(htmlContent); // Aktualisiere die Anzeige des gespeicherten Textes
-    showSaveIndicator(); // Zeige den "Gespeichert"-Hinweis
-    loadAllAnswers(); // Aktualisiere die Liste aller gespeicherten Antworten
+    displaySavedAnswer(htmlContent);
+    showSaveIndicator();
+    loadAllAnswers();
 }
 
-// Funktion zum Löschen aller gespeicherten Texte aus localStorage
+// Funktion zum Löschen aller gespeicherten Texte (nur boxsuk-Texte)
 function clearLocalStorage() {
-    // Entferne nur Schlüssel mit dem boxsuk-Präfix
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -177,330 +167,130 @@ function clearLocalStorage() {
         }
     }
     keysToRemove.forEach(key => localStorage.removeItem(key));
-    if (quill) quill.setText(''); // Leere den Quill-Editor
+    if (quill) quill.setText('');
     if (savedAnswerContainer) savedAnswerContainer.style.display = 'none';
     console.log("Alle gespeicherten boxsuk-Texte wurden gelöscht");
-    loadAllAnswers(); // Aktualisiere die Liste aller gespeicherten Antworten
+    loadAllAnswers();
 }
 
-// Funktion zum Löschen aller Antworten (Bulk)
 function bulkDeleteAnswers() {
     const selectedCheckboxes = document.querySelectorAll(".select-answer:checked");
     if(selectedCheckboxes.length === 0) {
         alert("Bitte wählen Sie mindestens eine Antwort zum Löschen aus.");
         return;
     }
-
     if(!confirm(`Sind Sie sicher, dass Sie ${selectedCheckboxes.length} ausgewählte Antwort(en) löschen möchten?`)) {
         return;
     }
-
     selectedCheckboxes.forEach(cb => {
         const assignmentId = cb.value;
         localStorage.removeItem(assignmentId);
         console.log(`Antwort für ${assignmentId} gelöscht.`);
     });
-
     alert(`${selectedCheckboxes.length} Antwort(en) wurden gelöscht.`);
-    loadAllAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
+    loadAllAnswers();
 }
 
-// Funktion zum Drucken einer einzelnen Antwort
-function printSingleAnswer(title, content) {
-    // Entferne vorhandenes printSingleContent, falls vorhanden
+// Aktualisierte Funktion zum Drucken einer einzelnen Antwort (inkl. Fragen)
+function printSingleAnswer(title, content, questions = {}) {
     const existingPrintDiv = document.getElementById('printSingleContent');
     if (existingPrintDiv) {
         document.body.removeChild(existingPrintDiv);
     }
-
-    // Erstelle ein temporäres Div
     const printDiv = document.createElement('div');
     printDiv.id = 'printSingleContent';
 
-    // Füge den Titel hinzu
     const titleElement = document.createElement('h2');
     titleElement.textContent = title;
     printDiv.appendChild(titleElement);
 
-    // Füge den Inhalt hinzu
     const contentElement = document.createElement('div');
-    contentElement.innerHTML = content; // Verwenden Sie innerHTML für formatierte Inhalte
+    contentElement.innerHTML = content;
     printDiv.appendChild(contentElement);
 
-    // Füge das Div zum Body hinzu
+    // Add questions if provided
+    if (Object.keys(questions).length > 0) {
+        const questionsElement = document.createElement('div');
+        questionsElement.className = 'questions-print';
+        questionsElement.innerHTML = '<em>';
+        Object.values(questions).forEach(question => {
+            questionsElement.innerHTML += `<div>- ${question}</div>`;
+        });
+        questionsElement.innerHTML += '</em>';
+        printDiv.appendChild(questionsElement);
+    }
+
     document.body.appendChild(printDiv);
-
-    // Füge die Klasse 'print-single' zum Body hinzu
     document.body.classList.add('print-single');
-
-    // Definiere die Handler-Funktion
     function handleAfterPrint() {
         document.body.classList.remove('print-single');
         const printDivAfter = document.getElementById('printSingleContent');
         if (printDivAfter) {
             document.body.removeChild(printDivAfter);
         }
-        // Entferne den Event Listener
         window.removeEventListener('afterprint', handleAfterPrint);
     }
-
-    // Füge den Event Listener hinzu
     window.addEventListener('afterprint', handleAfterPrint);
-
-    // Trigger den Druck
     window.print();
 }
 
-// Funktion zum Drucken aller Antworten
-function printAllAnswers(allContent) {
-    // Entferne vorhandenes printAllContent, falls vorhanden
-    const existingPrintDiv = document.getElementById('printAllContent');
-    if (existingPrintDiv) {
-        document.body.removeChild(existingPrintDiv);
-    }
-
-    // Erstelle ein temporäres Div
-    const printDiv = document.createElement('div');
-    printDiv.id = 'printAllContent';
-
-    // Füge den kombinierten Inhalt hinzu
-    printDiv.innerHTML = allContent;
-
-    // Füge das Div zum Body hinzu
-    document.body.appendChild(printDiv);
-
-    // Füge die Klasse 'print-all' zum Body hinzu
-    document.body.classList.add('print-all');
-
-    // Definiere die Handler-Funktion
-    function handleAfterPrint() {
-        document.body.classList.remove('print-all');
-        const printDivAfter = document.getElementById('printAllContent');
-        if (printDivAfter) {
-            document.body.removeChild(printDivAfter);
-        }
-        // Entferne den Event Listener
-        window.removeEventListener('afterprint', handleAfterPrint);
-    }
-
-    // Füge den Event Listener hinzu
-    window.addEventListener('afterprint', handleAfterPrint);
-
-    // Trigger den Druck
-    window.print();
-}
-
-// Funktion zum Anzeigen des "Gespeichert"-Hinweises
-function showSaveIndicator() {
-    if (!saveIndicator) return;
-    saveIndicator.style.display = 'block';
-    saveIndicator.style.backgroundColor = 'green'; // Set background color to green
-    saveIndicator.style.color = 'white'; // Set text color to white for better contrast
-    setTimeout(() => {
-        saveIndicator.style.display = 'none';
-    }, 2000); // Verstecken nach 2 Sekunden
-}
-
-// Debounce-Funktion zur Begrenzung der Ausführungsrate
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
-// Debounced-Version von saveToLocal (z.B. speichert 2 Sekunden nachdem der Benutzer aufgehört hat zu tippen)
-const debouncedSave = debounce(saveToLocal, 2000);
-
-// Event Listener für Textänderungen zur automatischen Speicherung
-if (quill) {
-    quill.on('text-change', function(delta, oldDelta, source) {
-        if (source === 'user') { // Stelle sicher, dass die Änderung vom Benutzer stammt
-            debouncedSave();
-        }
-    });
-}
-
-// Lade gespeicherten Inhalt und setze ihn im Quill-Editor
-if (quill) {
-    const savedText = localStorage.getItem(STORAGE_PREFIX + assignmentId);
-    if (savedText) {
-        quill.root.innerHTML = savedText;
-        console.log(`Gespeicherten Text für ${STORAGE_PREFIX + assignmentId} geladen`);
-        displaySavedAnswer(savedText);
-    } else {
-        console.log(`Kein gespeicherter Text für ${STORAGE_PREFIX + assignmentId} gefunden`);
-    }
-}
-
-// Funktion zum Laden und Anzeigen aller gespeicherten Antworten
-function loadAllAnswers() {
-    const draftContainer = document.getElementById("draftContainer");
-    if (!draftContainer) return;
-    draftContainer.innerHTML = ""; // Container leeren
-
-    const currentStorageKey = STORAGE_PREFIX + assignmentId;
-    const storageKeys = Object.keys(localStorage).filter(key => 
-        key.startsWith(STORAGE_PREFIX) && key !== currentStorageKey
-    );
-
-    console.log(`Gefundene ${storageKeys.length} gespeicherte boxsuk-Assignments`);
-
-    if(storageKeys.length === 0) {
-        draftContainer.innerHTML = "<p>Keine gespeicherten Antworten gefunden.</p>";
+// Funktion zum Drucken aller subIds für eine Aufgabe
+function printAllSubIdsForAssignment() {
+    const assignmentPrefix = `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
+    const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(assignmentPrefix));
+    
+    if (storageKeys.length === 0) {
+        alert("Keine gespeicherten Antworten für diese Aufgabe gefunden.");
         return;
     }
-
-    // Sortieren der storageKeys basierend auf dem Suffix in absteigender Reihenfolge (neueste zuerst)
+    
+    let allContent = `<h2>Aufgabe: ${assignmentSuffix}</h2>`;
     storageKeys.sort((a, b) => {
-        const suffixA = a.replace(STORAGE_PREFIX, '');
-        const suffixB = b.replace(STORAGE_PREFIX, '');
-        return suffixB.localeCompare(suffixA, undefined, {numeric: true, sensitivity: 'base'});
+        const subIdA = a.replace(assignmentPrefix, '');
+        const subIdB = b.replace(assignmentPrefix, '');
+        return subIdA.localeCompare(subIdB);
     });
-
-    console.log("Sortierte Assignment-IDs:", storageKeys);
-
-    storageKeys.forEach(assignmentIdKey => {
-        const text = localStorage.getItem(assignmentIdKey);
-        if(text) {
-            console.log(`Lade Assignment: ${assignmentIdKey}`);
-            const draftDiv = document.createElement("div");
-            draftDiv.className = "draft";
-
-            // Erstellen einer Checkbox
-            const checkboxDiv = document.createElement("div");
-            checkboxDiv.style.position = "absolute";
-            checkboxDiv.style.top = "10px";
-            checkboxDiv.style.left = "10px";
-
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.className = "select-answer";
-            checkbox.value = assignmentIdKey; // assignmentId als Wert verwenden
-            checkbox.addEventListener('change', toggleBulkDeleteButton);
-
-            const checkboxLabel = document.createElement("label");
-            checkboxLabel.textContent = " Auswählen";
-
-            checkboxDiv.appendChild(checkbox);
-            checkboxDiv.appendChild(checkboxLabel);
-            draftDiv.appendChild(checkboxDiv);
-
-            const assignmentIdMatch = assignmentIdKey.match(/^boxsuk-assignment[_-]?(.+)$/);
-            const assignmentIdClean = assignmentIdMatch ? assignmentIdMatch[1] : assignmentIdKey;
-
-            const title = document.createElement("h3");
-            title.textContent = `Aufgabe ${assignmentIdClean}`;
-            draftDiv.appendChild(title);
-
-            const answerDiv = document.createElement("div");
-            answerDiv.className = "answerText";
-            // Verwenden Sie innerHTML, um die Formatierung beizubehalten
-            answerDiv.innerHTML = text;
-            answerDiv.style.marginLeft = "30px"; // Platz für die Checkbox schaffen
-            draftDiv.appendChild(answerDiv);
-
-            // Erstellen der Button-Gruppe
-            const buttonGroup = document.createElement("div");
-            buttonGroup.className = "button-group";
-
-            // Löschen-Schaltfläche
-            const deleteBtn = document.createElement("button");
-            deleteBtn.textContent = "Antwort löschen";
-            deleteBtn.className = "deleteAnswerBtn";
-            deleteBtn.addEventListener('click', function() {
-                deleteAnswer(assignmentIdKey);
-            });
-            buttonGroup.appendChild(deleteBtn);
-            
-            // Neuer Druck-Button
-            const printBtn = document.createElement("button");
-            printBtn.textContent = "Diese Antwort drucken / Als PDF speichern";
-            printBtn.className = "printAnswerBtn";
-            printBtn.addEventListener('click', function() {
-                // Extrahiere reinen Text für den Druck
-                const tempDivPrint = document.createElement('div');
-                tempDivPrint.innerHTML = text;
-                const plainTextPrint = tempDivPrint.innerText; // Verwenden Sie innerText für reinen Text
-                printSingleAnswer(`Aufgabe ${assignmentIdClean}`, plainTextPrint);
-            });
-            buttonGroup.appendChild(printBtn);
-            // Ende Druck-Button
-
-            draftDiv.appendChild(buttonGroup);
-
-            draftContainer.appendChild(draftDiv);
+    
+    storageKeys.forEach(key => {
+        const content = localStorage.getItem(key);
+        if (content) {
+            const subId = key.replace(assignmentPrefix, '');
+            const questionsHtml = getQuestionsForSubId(subId);
+            allContent += `<h3>Thema: ${subId}</h3>`;
+            if (questionsHtml) {
+                allContent += questionsHtml;
+            }
+            allContent += `<div>${content}</div>`;
+            allContent += `<hr>`;
         }
     });
-
-    // Nach dem Laden der Antworten:
-    toggleBulkDeleteButton();
+    printAllAnswers(allContent);
 }
 
-// Event Listener für den Button "Text drucken / Als PDF speichern" (nun nur aktuelle Antwort)
-if (document.getElementById("downloadAllBtn")) {
-    document.getElementById("downloadAllBtn").addEventListener('click', function() {
-        const currentStorageKey = STORAGE_PREFIX + assignmentId;
-        const savedText = localStorage.getItem(currentStorageKey);
-
-        if (!savedText) {
-            alert("Keine gespeicherte Antwort zum Drucken oder Speichern als PDF vorhanden.");
-            console.log("Versuch, die aktuelle Antwort zu drucken, aber keine ist gespeichert");
-            return;
-        }
-
-        console.log("Drucken der aktuellen Antwort wird initiiert");
-
-        // Kombiniere parentTitle und assignmentSuffix für den Titel
-        const titleText = parentTitle
-            ? `${parentTitle} - Aufgabe: ${assignmentSuffix}`
-            : `Aufgabe: ${assignmentSuffix}`;
-
-        // Nutze die vorhandene Funktion zum Drucken einer einzelnen Antwort
-        printSingleAnswer(titleText, savedText);
-    });
-}
-
-// Event Listener für die "Alle Antworten drucken / Als PDF speichern" Schaltfläche
-if (document.getElementById("printAllBtn")) {
-    document.getElementById("printAllBtn").addEventListener('click', function() {
-        const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_PREFIX));
-
-        if(storageKeys.length === 0) {
-            alert("Keine gespeicherten Antworten zum Drucken oder Speichern als PDF vorhanden.");
-            console.log("Versuch, alle Antworten zu drucken, aber keine sind gespeichert");
-            return;
-        }
-
-        console.log("Drucken aller gespeicherten Antworten wird initiiert");
-
-        // Kombiniere alle gespeicherten Antworten
-        let allContent = '';
-        storageKeys.sort((a, b) => {
-            const suffixA = a.replace(STORAGE_PREFIX, '');
-            const suffixB = b.replace(STORAGE_PREFIX, '');
-            return suffixB.localeCompare(suffixA, undefined, {numeric: true, sensitivity: 'base'});
-        });
-
-        storageKeys.forEach(assignmentIdKey => {
-            const text = localStorage.getItem(assignmentIdKey);
-            if(text) {
-                const assignmentIdMatch = assignmentIdKey.match(/^boxsuk-assignment[_-]?(.+)$/);
-                const assignmentIdClean = assignmentIdMatch ? assignmentIdMatch[1] : assignmentIdKey;
-                const title = `Aufgabe ${assignmentIdClean}`;
-                allContent += `<h3>${title}</h3>`;
-                allContent += `<div>${text}</div>`;
-                allContent += `<hr>`;
+// Helper-Funktion, um Fragen-HTML für eine subId zu erstellen
+function getQuestionsForSubId(subId) {
+    const params = getQueryParams();
+    if (params.subIds && params.subIds.includes(subId)) {
+        const index = params.subIds.indexOf(subId);
+        const questions = {};
+        Object.keys(params).forEach(key => {
+            if (key.startsWith('question') && params[key] && params[key][index]) {
+                questions[key] = params[key][index];
             }
         });
-
-        // Drucken aller Antworten
-        printAllAnswers(allContent);
-    });
+        if (Object.keys(questions).length > 0) {
+            let html = '<div class="questions-print"><em>';
+            Object.values(questions).forEach(question => {
+                html += `<div>- ${question}</div>`;
+            });
+            html += '</em></div>';
+            return html;
+        }
+    }
+    return '';
 }
 
-// Event Listener für die "Alle auswählen" Checkbox
+// Event Listener für "Alle auswählen" Checkbox und Bulk-Buttons
 const selectAllCheckbox = document.getElementById("selectAll");
 if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener('change', function() {
@@ -509,35 +299,83 @@ if (selectAllCheckbox) {
         toggleBulkDeleteButton();
     });
 }
-
-// Event Listener für die "Ausgewählte löschen" Schaltfläche
 if (document.getElementById("bulkDeleteBtn")) {
     document.getElementById("bulkDeleteBtn").addEventListener('click', bulkDeleteAnswers);
 }
 
-// Funktion zum Kopieren als Fallback
-function fallbackCopyTextToClipboard(text) {
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    // Verstecke das textarea Element
-    textarea.style.position = "fixed";
-    textarea.style.top = "-9999px";
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-
-    try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-            console.log("Text erfolgreich kopiert (Fallback)");
-        } else {
-            throw new Error("Fallback copy unsuccessful");
-        }
-    } catch (err) {
-        console.error('Fehler beim Kopieren der Antwort (Fallback): ', err);
+// Funktion, um die Liste der gespeicherten Antworten zu laden und anzuzeigen
+function loadAllAnswers() {
+    const draftContainer = document.getElementById("draftContainer");
+    if (!draftContainer) return;
+    draftContainer.innerHTML = "";
+    const currentStorageKey = STORAGE_PREFIX + assignmentId;
+    const storageKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith(STORAGE_PREFIX) && key !== currentStorageKey
+    );
+    console.log(`Gefundene ${storageKeys.length} gespeicherte boxsuk-Assignments`);
+    if(storageKeys.length === 0) {
+        draftContainer.innerHTML = "<p>Keine gespeicherten Antworten gefunden.</p>";
+        return;
     }
-
-    document.body.removeChild(textarea);
+    storageKeys.sort((a, b) => {
+        const suffixA = a.replace(STORAGE_PREFIX, '');
+        const suffixB = b.replace(STORAGE_PREFIX, '');
+        return suffixB.localeCompare(suffixA, undefined, {numeric: true, sensitivity: 'base'});
+    });
+    storageKeys.forEach(assignmentIdKey => {
+        const text = localStorage.getItem(assignmentIdKey);
+        if(text) {
+            const draftDiv = document.createElement("div");
+            draftDiv.className = "draft";
+            const checkboxDiv = document.createElement("div");
+            checkboxDiv.style.position = "absolute";
+            checkboxDiv.style.top = "10px";
+            checkboxDiv.style.left = "10px";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "select-answer";
+            checkbox.value = assignmentIdKey;
+            checkbox.addEventListener('change', toggleBulkDeleteButton);
+            const checkboxLabel = document.createElement("label");
+            checkboxLabel.textContent = " Auswählen";
+            checkboxDiv.appendChild(checkbox);
+            checkboxDiv.appendChild(checkboxLabel);
+            draftDiv.appendChild(checkboxDiv);
+            const assignmentIdMatch = assignmentIdKey.match(/^boxsuk-assignment[_-]?(.+)$/);
+            const assignmentIdClean = assignmentIdMatch ? assignmentIdMatch[1] : assignmentIdKey;
+            const title = document.createElement("h3");
+            title.textContent = `Aufgabe ${assignmentIdClean}`;
+            draftDiv.appendChild(title);
+            const answerDiv = document.createElement("div");
+            answerDiv.className = "answerText";
+            answerDiv.innerHTML = text;
+            answerDiv.style.marginLeft = "30px";
+            draftDiv.appendChild(answerDiv);
+            const buttonGroup = document.createElement("div");
+            buttonGroup.className = "button-group";
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Antwort löschen";
+            deleteBtn.className = "deleteAnswerBtn";
+            deleteBtn.addEventListener('click', function() {
+                deleteAnswer(assignmentIdKey);
+            });
+            buttonGroup.appendChild(deleteBtn);
+            const printBtn = document.createElement("button");
+            printBtn.textContent = "Diese Antwort drucken / Als PDF speichern";
+            printBtn.className = "printAnswerBtn";
+            printBtn.addEventListener('click', function() {
+                const tempDivPrint = document.createElement('div');
+                tempDivPrint.innerHTML = text;
+                const plainTextPrint = tempDivPrint.innerText;
+                // Optional: You can pass associated questions if needed
+                printSingleAnswer(`Aufgabe ${assignmentIdClean}`, plainTextPrint);
+            });
+            buttonGroup.appendChild(printBtn);
+            draftDiv.appendChild(buttonGroup);
+            draftContainer.appendChild(draftDiv);
+        }
+    });
+    toggleBulkDeleteButton();
 }
 
 // Funktion zum Löschen einer einzelnen Antwort
@@ -546,11 +384,11 @@ function deleteAnswer(assignmentId) {
         localStorage.removeItem(assignmentId);
         alert("Antwort wurde gelöscht.");
         console.log(`Antwort für ${assignmentId} gelöscht.`);
-        loadAllAnswers(); // Aktualisiere die Liste der gespeicherten Antworten
+        loadAllAnswers();
     }
 }
 
-// Funktion zum Kopieren einer einzelnen Antwort (falls benötigt in anderen Seiten)
+// Funktion zum Kopieren einer einzelnen Antwort
 function copyAnswer(assignmentId) {
     const content = localStorage.getItem(assignmentId);
     if (content) {
@@ -558,60 +396,116 @@ function copyAnswer(assignmentId) {
     }
 }
 
-// Funktion zum Laden und Anzeigen aller gespeicherten Antworten beim Laden der Seite
+// Aktualisiere die UI mit subId-Informationen
+function updateSubIdInfo() {
+    const subIdInfoElement = document.getElementById('subIdInfo');
+    if (!subIdInfoElement) return;
+    const { subId, questions } = getCurrentSubIdAndQuestions();
+    if (subId) {
+        let html = `<h4>Thema: ${subId}</h4>`;
+        if (Object.keys(questions).length > 0) {
+            html += '<div class="questions-container"><em>';
+            Object.values(questions).forEach(question => {
+                html += `<div>- ${question}</div>`;
+            });
+            html += '</em></div>';
+        }
+        subIdInfoElement.innerHTML = html;
+        subIdInfoElement.style.display = 'block';
+    } else {
+        subIdInfoElement.style.display = 'none';
+    }
+}
+
+// Event Listener beim Laden der Seite
 document.addEventListener("DOMContentLoaded", function() {
+    updateSubIdInfo();
+    if (quill) {
+        const { subId } = getCurrentSubIdAndQuestions();
+        const storageKey = subId 
+            ? `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`
+            : `${STORAGE_PREFIX}${assignmentId}`;
+        const savedText = localStorage.getItem(storageKey);
+        if (savedText) {
+            quill.root.innerHTML = savedText;
+            console.log(`Gespeicherten Text für ${storageKey} geladen`);
+            displaySavedAnswer(savedText);
+        } else {
+            console.log(`Kein gespeicherter Text für ${storageKey} gefunden`);
+        }
+    }
     loadAllAnswers();
+
+    // Append new button for printing all subIds to the existing button container
+    const buttonContainer = document.querySelector('.button-container');
+    if (buttonContainer) {
+        const printAllSubIdsBtn = document.createElement('button');
+        printAllSubIdsBtn.id = 'printAllSubIdsBtn';
+        printAllSubIdsBtn.textContent = 'Alle Themen dieser Aufgabe drucken';
+        printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment);
+        buttonContainer.appendChild(printAllSubIdsBtn);
+    }
 });
 
-// Optional: Log the initial state of localStorage for debugging
+// Debounce-Funktion
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+const debouncedSave = debounce(saveToLocal, 2000);
+if (quill) {
+    quill.on('text-change', function(delta, oldDelta, source) {
+        if (source === 'user') {
+            debouncedSave();
+        }
+    });
+}
+
+// Debug initialer Zustand von localStorage
 console.log("Initialer Zustand von localStorage:");
 for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     console.log(`${key}: ${localStorage.getItem(key)}`);
 }
 
-// Event Listener für den neuen "Export als TXT" Button
+// Event Listener für den Export als TXT Button
 const exportTxtBtn = document.getElementById("exportTxtBtn");
 if (exportTxtBtn) {
     exportTxtBtn.addEventListener('click', function() {
-        const currentStorageKey = STORAGE_PREFIX + assignmentId;
-        const savedHtml = localStorage.getItem(currentStorageKey);
-
+        const { subId } = getCurrentSubIdAndQuestions();
+        const storageKey = subId 
+            ? `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`
+            : `${STORAGE_PREFIX}${assignmentId}`;
+        const savedHtml = localStorage.getItem(storageKey);
         if (!savedHtml) {
             alert("Keine gespeicherte Antwort zum Exportieren vorhanden.");
             console.log("Versuch, die Antwort zu exportieren, aber keine ist gespeichert");
             return;
         }
-
-        // HTML zu Text mit korrekten Zeilenumbrüchen konvertieren
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = savedHtml;
-        
         let plainText = tempDiv.innerHTML
             .replace(/<\/div>/gi, "\n")
             .replace(/<br>/gi, "\n")
             .replace(/<\/p>/gi, "\n\n")
             .replace(/<[^>]+>/g, "");
-            
         plainText = plainText.replace(/\n\s*\n/g, '\n\n').trim();
-
-        // Füge URL und AssignmentId hinzu
         plainText += `\n\nURL: ${window.location.href}\nAssignment ID: ${assignmentId}`;
-
-        // Blob und Download
         const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-    
         if ('download' in link) {
             link.download = `${assignmentSuffix || 'antwort'}.txt`;
             link.href = url;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(url), 100); // Clean up
+            setTimeout(() => URL.revokeObjectURL(url), 100);
         } else {
-            window.open(url); // Fallback for unsupported browsers
+            window.open(url);
         }
     });
 }

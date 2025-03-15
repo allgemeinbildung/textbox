@@ -1,3 +1,4 @@
+<!-- File: allgemeinbildung-textbox/print_page.html -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -36,6 +37,7 @@
         #downloadAllTxtBtn:hover {
             background-color: #8e24aa; /* Helleres Lila beim Hover */
         }
+        /* New button styling is handled in styles.css, but you can add local styles if needed */
         .message {
             margin-top: 20px;
             font-size: 14px;
@@ -48,6 +50,8 @@
         <h3>Alle gespeicherten Antworten Drucken</h3>
         <button id="printAllBtn">Alle Antworten drucken / Als PDF speichern</button>
         <button id="downloadAllTxtBtn">Alle Antworten als TXT exportieren</button>
+        <!-- New button for printing assignments grouped by subIds -->
+        <button id="printAllSubIdsBtn">Alle Themen nach Aufgaben gruppiert drucken</button>
         <div class="message" id="message"></div>
     </div>
 
@@ -67,7 +71,6 @@
                     });
                 }
             });
-
             return answers;
         }
 
@@ -102,7 +105,6 @@
                 </html>
             `);
             printWindow.document.close();
-            
             printWindow.onload = function() {
                 printWindow.print();
                 printWindow.close();
@@ -123,13 +125,11 @@
             answers.forEach(answer => {
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = answer.content;
-                
                 let plainText = tempDiv.innerHTML
                     .replace(/<\/div>/gi, "\n")
                     .replace(/<br>/gi, "\n")
                     .replace(/<\/p>/gi, "\n\n")
                     .replace(/<[^>]+>/g, "");
-                    
                 plainText = plainText.replace(/\n\s*\n/g, '\n\n').trim();
                 txtContent += `Aufgabe ${answer.id}\n${plainText}\nURL: ${window.location.href}\nAssignment ID: ${answer.id}\n\n`;
             });
@@ -137,8 +137,6 @@
             const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-
-            // Feature detection for download attribute
             if (typeof a.download !== 'undefined') {
                 a.download = 'alle_antworten.txt';
                 a.href = url;
@@ -147,16 +145,101 @@
                 document.body.removeChild(a);
                 setTimeout(() => URL.revokeObjectURL(url), 100);
             } else {
-                // Fallback for browsers without download support
                 window.open(url);
             }
-
             messageEl.textContent = "Alle Antworten wurden als TXT exportiert.";
         }
 
-        // Event Listeners
+        // New function: Print all assignments grouped by subIds
+        function printAllAssignmentsWithSubIds() {
+            const STORAGE_PREFIX = 'boxsuk-assignment_';
+            const SUB_STORAGE_PREFIX = 'boxsuk-sub_';
+            const messageEl = document.getElementById('message');
+            
+            // Collect assignment keys (ignoring subId parts)
+            const assignmentKeys = new Set();
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith(STORAGE_PREFIX)) {
+                    const assignmentPart = key.includes(SUB_STORAGE_PREFIX)
+                        ? key.split('_' + SUB_STORAGE_PREFIX)[0]
+                        : key;
+                    assignmentKeys.add(assignmentPart);
+                }
+            });
+            
+            if (assignmentKeys.size === 0) {
+                messageEl.textContent = "Keine gespeicherten Antworten gefunden.";
+                return;
+            }
+            
+            let allContent = '';
+            Array.from(assignmentKeys).sort().forEach(assignmentKey => {
+                const assignmentId = assignmentKey.replace(STORAGE_PREFIX, '');
+                allContent += `<h2>Aufgabe: ${assignmentId}</h2>`;
+                
+                const subIdPrefix = `${assignmentKey}_${SUB_STORAGE_PREFIX}`;
+                const subIdKeys = Object.keys(localStorage).filter(key => key.startsWith(subIdPrefix));
+                
+                if (subIdKeys.length > 0) {
+                    subIdKeys.sort((a, b) => {
+                        const subIdA = a.replace(subIdPrefix, '');
+                        const subIdB = b.replace(subIdPrefix, '');
+                        return subIdA.localeCompare(subIdB);
+                    });
+                    
+                    subIdKeys.forEach(subIdKey => {
+                        const content = localStorage.getItem(subIdKey);
+                        if (content) {
+                            const subId = subIdKey.replace(subIdPrefix, '');
+                            allContent += `<h3>Thema: ${subId}</h3>`;
+                            // No questions stored separately on print_page – they come from the URL
+                            allContent += `<div>${content}</div>`;
+                            allContent += `<hr>`;
+                        }
+                    });
+                } else {
+                    const content = localStorage.getItem(assignmentKey);
+                    if (content) {
+                        allContent += `<div>${content}</div>`;
+                        allContent += `<hr>`;
+                    }
+                }
+            });
+            
+            const printWindow = window.open('', '', 'height=800,width=800');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Alle Aufgaben mit Themen</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h2 { color: #003f5c; margin-top: 30px; }
+                        h3 { color: #2f4b7c; margin-top: 20px; }
+                        hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
+                        .questions-print { 
+                            margin-bottom: 15px;
+                            font-style: italic;
+                        }
+                        .questions-print div {
+                            margin-bottom: 5px;
+                        }
+                    </style>
+                </head>
+                <body>${allContent}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.onload = function() {
+                printWindow.print();
+                printWindow.close();
+                messageEl.textContent = "Druckauftrag wurde gestartet.";
+            };
+        }
+        
+        // Event Listeners for print buttons
         document.getElementById('printAllBtn').addEventListener('click', printAllAnswers);
         document.getElementById('downloadAllTxtBtn').addEventListener('click', downloadAllAnswersAsTxt);
+        document.getElementById('printAllSubIdsBtn').addEventListener('click', printAllAssignmentsWithSubIds);
     </script>
 </body>
 </html>
