@@ -1,4 +1,3 @@
-<!-- File: allgemeinbildung-textbox/print_page.html -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -20,7 +19,7 @@
             padding: 12px 24px;
             font-size: 16px;
             cursor: pointer;
-            background-color: #4CAF50; /* Grün */
+            background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 4px;
@@ -29,13 +28,6 @@
         }
         button:hover {
             background-color: #45a049;
-        }
-        #downloadAllTxtBtn {
-            background-color: #6a1b9a;
-            color: #ffffff;
-        }
-        #downloadAllTxtBtn:hover {
-            background-color: #8e24aa;
         }
         .message {
             margin-top: 20px;
@@ -48,7 +40,7 @@
     <div class="container">
         <h3>Alle gespeicherten Antworten Drucken</h3>
         <button id="printAllBtn">Alle Antworten drucken / Als PDF speichern</button>
-        <button id="downloadAllTxtBtn">Alle Antworten als TXT exportieren</button>
+        <!-- Removed TXT export button -->
         <!-- New button for printing assignments grouped by subIds -->
         <button id="printAllSubIdsBtn">Alle Themen nach Aufgaben gruppiert drucken</button>
         <div class="message" id="message"></div>
@@ -111,44 +103,6 @@
             };
         }
 
-        function downloadAllAnswersAsTxt() {
-            const answers = getAllSavedAnswers();
-            const messageEl = document.getElementById('message');
-
-            if (answers.length === 0) {
-                messageEl.textContent = "Keine gespeicherten Antworten gefunden.";
-                return;
-            }
-
-            let txtContent = '';
-            answers.forEach(answer => {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = answer.content;
-                let plainText = tempDiv.innerHTML
-                    .replace(/<\/div>/gi, "\n")
-                    .replace(/<br>/gi, "\n")
-                    .replace(/<\/p>/gi, "\n\n")
-                    .replace(/<[^>]+>/g, "");
-                plainText = plainText.replace(/\n\s*\n/g, '\n\n').trim();
-                txtContent += `Aufgabe ${answer.id}\n${plainText}\nURL: ${window.location.href}\nAssignment ID: ${answer.id}\n\n`;
-            });
-
-            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            if (typeof a.download !== 'undefined') {
-                a.download = 'alle_antworten.txt';
-                a.href = url;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(url), 100);
-            } else {
-                window.open(url);
-            }
-            messageEl.textContent = "Alle Antworten wurden als TXT exportiert.";
-        }
-
         // New function: Print all assignments grouped by subIds
         function printAllAssignmentsWithSubIds() {
             const STORAGE_PREFIX = 'boxsuk-assignment_';
@@ -172,7 +126,6 @@
             }
             
             let allContent = '';
-            // Note the header now uses "Kapitel" instead of "Aufgabe"
             Array.from(assignmentKeys).sort().forEach(assignmentKey => {
                 const assignmentId = assignmentKey.replace(STORAGE_PREFIX, '');
                 allContent += `<h2>Kapitel: ${assignmentId}</h2>`;
@@ -237,7 +190,6 @@
         
         // Event Listeners for print buttons
         document.getElementById('printAllBtn').addEventListener('click', printAllAnswers);
-        document.getElementById('downloadAllTxtBtn').addEventListener('click', downloadAllAnswersAsTxt);
         document.getElementById('printAllSubIdsBtn').addEventListener('click', printAllAssignmentsWithSubIds);
     </script>
 </body>

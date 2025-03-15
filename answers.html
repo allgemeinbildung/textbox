@@ -18,45 +18,13 @@
         <!-- New subId info section -->
         <div id="subIdInfo" class="sub-id-info"></div>
         <div id="answerBox" class="quill-editor"></div>
-        <pre id="answerText" style="display: none;"></pre>
     </div>
     
-    <!-- Button-Container mit allen Buttons -->
+    <!-- Button-Container mit verbleibenden Buttons -->
     <div class="button-container">
         <button id="downloadAllBtn">Dieser Text drucken / als PDF speichern</button>
-        <button id="exportTxtBtn">Antwort als TXT exportieren</button>
         <button id="clearBtn">Text löschen</button>
     </div>
-
-    <!-- Anzeige des gespeicherten Textes -->
-    <div id="savedAnswerContainer">
-        <h3 id="savedAssignmentTitle"></h3>
-        <div id="savedAnswer"></div>
-    </div>
-
-    <!-- Haupt-Button-Container für verbleibende Funktionen -->
-    <div class="button-container-main">
-        <!-- Entfernte Buttons: copyAllBtn und clearAllBtn -->
-    </div>
-    
-    <h2>Bereits gespeicherte Antworten:</h2>
-
-    <!-- Verpackt in ein Dropdown-Menü -->
-    <details>
-        <summary>Antworten anzeigen</summary>
-        
-        <!-- Bulk Action Container -->
-        <div class="bulk-action-container">
-            <input type="checkbox" id="selectAll">
-            <label for="selectAll"> Alle auswählen</label>
-            <button id="bulkDeleteBtn" disabled>Ausgewählte löschen</button>
-            <button id="printAllBtn">Alle Antworten drucken / Als PDF speichern</button>
-        </div>
-        
-        <div id="draftContainer">
-            <!-- Drafts werden hier geladen -->
-        </div>
-    </details>
     
     <!-- Quill JS -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
