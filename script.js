@@ -38,12 +38,18 @@ const SUB_STORAGE_PREFIX = 'boxsuk-sub_';
 
 // Setze den assignmentId und extrahiere das Suffix
 const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
-const parentTitle = getParentPageTitle();
+const parentTitle = (typeof getParentPageTitle === 'function') ? getParentPageTitle() : '';
 const assignmentInfo = document.getElementById('assignmentInfo');
-
 const assignmentSuffix = assignmentId.replace(/^assignment[_-]?/i, '');
+
+// If a subId is provided, use it for the header; otherwise show the assignment
+const { subId } = getCurrentSubIdAndQuestions();
 if (assignmentInfo) {
-    assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Aufgabe';
+    if (subId) {
+         assignmentInfo.textContent = `Thema: ${subId}`;
+    } else {
+         assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Aufgabe';
+    }
 }
 
 // Initialisiere den Quill-Editor
@@ -61,7 +67,6 @@ if (document.getElementById('answerBox')) {
         }
     });
 
-    // Importiere Delta korrekt
     const Delta = Quill.import('delta');
     quill.clipboard.addMatcher(Node.ELEMENT_NODE, function(node, delta) {
         return new Delta();
@@ -78,31 +83,22 @@ const savedAssignmentTitle = document.getElementById('savedAssignmentTitle');
 const savedAnswer = document.getElementById('savedAnswer');
 const saveIndicator = document.getElementById('saveIndicator');
 
-// Funktion zum Anzeigen des gespeicherten Textes inkl. subId und Fragen
+// Zeige den gespeicherten Text inkl. Fragen an
 function displaySavedAnswer(content) {
     if (!savedAssignmentTitle || !savedAnswer || !savedAnswerContainer) return;
-    const { subId, questions } = getCurrentSubIdAndQuestions();
     let titleText = parentTitle
         ? `${parentTitle}\nAufgabe: ${assignmentSuffix}`
         : `Aufgabe: ${assignmentSuffix}`;
     if (subId) {
-        titleText += `\nThema: ${subId}`;
+        titleText = `Thema: ${subId}`;
     }
     savedAssignmentTitle.textContent = titleText;
 
-    let questionsHtml = '';
-    if (Object.keys(questions).length > 0) {
-        questionsHtml += '<div class="questions-container"><em>';
-        Object.values(questions).forEach(question => {
-            questionsHtml += `<div>- ${question}</div>`;
-        });
-        questionsHtml += '</em></div>';
-    }
-    savedAnswer.innerHTML = questionsHtml + content;
+    // Die Fragen werden nun separat in der subIdInfo angezeigt
+    savedAnswer.innerHTML = content;
     savedAnswerContainer.style.display = 'block';
 }
 
-// Funktion zum Kopieren von Text in die Zwischenablage
 function copyTextToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(function() {
@@ -137,7 +133,7 @@ function fallbackCopyTextToClipboard(text) {
     document.body.removeChild(textarea);
 }
 
-// Funktion zum Speichern des Textes in localStorage (mit subId)
+// Speichere den Text (mit subId, falls vorhanden)
 function saveToLocal() {
     if (!quill) return;
     const htmlContent = quill.root.innerHTML;
@@ -157,7 +153,6 @@ function saveToLocal() {
     loadAllAnswers();
 }
 
-// Funktion zum Löschen aller gespeicherten Texte (nur boxsuk-Texte)
 function clearLocalStorage() {
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -191,7 +186,7 @@ function bulkDeleteAnswers() {
     loadAllAnswers();
 }
 
-// Aktualisierte Funktion zum Drucken einer einzelnen Antwort (inkl. Fragen)
+// Drucken einer einzelnen Antwort inkl. (optional) Fragen
 function printSingleAnswer(title, content, questions = {}) {
     const existingPrintDiv = document.getElementById('printSingleContent');
     if (existingPrintDiv) {
@@ -208,7 +203,6 @@ function printSingleAnswer(title, content, questions = {}) {
     contentElement.innerHTML = content;
     printDiv.appendChild(contentElement);
 
-    // Add questions if provided
     if (Object.keys(questions).length > 0) {
         const questionsElement = document.createElement('div');
         questionsElement.className = 'questions-print';
@@ -234,7 +228,7 @@ function printSingleAnswer(title, content, questions = {}) {
     window.print();
 }
 
-// Funktion zum Drucken aller subIds für eine Aufgabe
+// Drucken aller subIds für eine Aufgabe
 function printAllSubIdsForAssignment() {
     const assignmentPrefix = `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
     const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(assignmentPrefix));
@@ -290,20 +284,25 @@ function getQuestionsForSubId(subId) {
     return '';
 }
 
-// Event Listener für "Alle auswählen" Checkbox und Bulk-Buttons
-const selectAllCheckbox = document.getElementById("selectAll");
-if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll(".select-answer");
-        checkboxes.forEach(cb => cb.checked = this.checked);
-        toggleBulkDeleteButton();
-    });
-}
-if (document.getElementById("bulkDeleteBtn")) {
-    document.getElementById("bulkDeleteBtn").addEventListener('click', bulkDeleteAnswers);
+// Zeige im UI (unter dem Header) nur die Fragen an – nicht den Titel (dies wird in assignmentInfo gesetzt)
+function updateSubIdInfo() {
+    const subIdInfoElement = document.getElementById('subIdInfo');
+    if (!subIdInfoElement) return;
+    const { questions } = getCurrentSubIdAndQuestions();
+    if (Object.keys(questions).length > 0) {
+         let html = '<div class="questions-container"><em>';
+         Object.values(questions).forEach(question => {
+             html += `<div>- ${question}</div>`;
+         });
+         html += '</em></div>';
+         subIdInfoElement.innerHTML = html;
+         subIdInfoElement.style.display = 'block';
+    } else {
+         subIdInfoElement.style.display = 'none';
+    }
 }
 
-// Funktion, um die Liste der gespeicherten Antworten zu laden und anzuzeigen
+// Lade alle gespeicherten Antworten und zeige sie an
 function loadAllAnswers() {
     const draftContainer = document.getElementById("draftContainer");
     if (!draftContainer) return;
@@ -367,7 +366,6 @@ function loadAllAnswers() {
                 const tempDivPrint = document.createElement('div');
                 tempDivPrint.innerHTML = text;
                 const plainTextPrint = tempDivPrint.innerText;
-                // Optional: You can pass associated questions if needed
                 printSingleAnswer(`Aufgabe ${assignmentIdClean}`, plainTextPrint);
             });
             buttonGroup.appendChild(printBtn);
@@ -378,7 +376,6 @@ function loadAllAnswers() {
     toggleBulkDeleteButton();
 }
 
-// Funktion zum Löschen einer einzelnen Antwort
 function deleteAnswer(assignmentId) {
     if(confirm("Sind Sie sicher, dass Sie diese Antwort löschen möchten?")) {
         localStorage.removeItem(assignmentId);
@@ -388,32 +385,10 @@ function deleteAnswer(assignmentId) {
     }
 }
 
-// Funktion zum Kopieren einer einzelnen Antwort
 function copyAnswer(assignmentId) {
     const content = localStorage.getItem(assignmentId);
     if (content) {
         copyTextToClipboard(content);
-    }
-}
-
-// Aktualisiere die UI mit subId-Informationen
-function updateSubIdInfo() {
-    const subIdInfoElement = document.getElementById('subIdInfo');
-    if (!subIdInfoElement) return;
-    const { subId, questions } = getCurrentSubIdAndQuestions();
-    if (subId) {
-        let html = `<h4>Thema: ${subId}</h4>`;
-        if (Object.keys(questions).length > 0) {
-            html += '<div class="questions-container"><em>';
-            Object.values(questions).forEach(question => {
-                html += `<div>- ${question}</div>`;
-            });
-            html += '</em></div>';
-        }
-        subIdInfoElement.innerHTML = html;
-        subIdInfoElement.style.display = 'block';
-    } else {
-        subIdInfoElement.style.display = 'none';
     }
 }
 
@@ -464,14 +439,12 @@ if (quill) {
     });
 }
 
-// Debug initialer Zustand von localStorage
 console.log("Initialer Zustand von localStorage:");
 for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     console.log(`${key}: ${localStorage.getItem(key)}`);
 }
 
-// Event Listener für den Export als TXT Button
 const exportTxtBtn = document.getElementById("exportTxtBtn");
 if (exportTxtBtn) {
     exportTxtBtn.addEventListener('click', function() {
