@@ -165,27 +165,6 @@ button:hover {
 }
 
 
-/* Styling for questions container */
-.questions-container {
-    margin-bottom: 15px;
-    padding: 10px;
-    background-color: #f9f9f9;
-    border-left: 3px solid #4CAF50;
-    font-style: italic;
-}
-.questions-container div {
-    margin-bottom: 5px;
-}
-/* Styling for questions in print view */
-.questions-print {
-    margin-bottom: 15px;
-    font-style: italic;
-}
-.questions-print div {
-    margin-bottom: 5px;
-}
-
-
 /* Anzeige der gespeicherten Antwort */
 #savedAnswerContainer {
     margin-top: 20px;
@@ -298,16 +277,6 @@ button:hover {
     background-color: var(--button-print-all-hover-bg); /* Dunkleres Grün beim Hover */
 }
 
-/* Style for the new print all subIds button */
-#printAllSubIdsBtn {
-    background-color: #673AB7; /* Purple */
-    color: white;
-}
-#printAllSubIdsBtn:hover {
-    background-color: #5E35B1; /* Darker purple on hover */
-}
-
-
 /* Stil für den neuen "Export als TXT" Button */
 #exportTxtBtn {
     background-color: var(--button-copy-bg); /* Grün */
@@ -414,4 +383,40 @@ details[open] summary::after {
 summary::after {
     content: " ▼";
     float: right;
+}
+
+/* Add to styles.css */
+#saveIndicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+.questions-container {
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.questions-container div {
+    margin-bottom: 5px;
+}
+
+.sub-id-info {
+    margin-bottom: 15px;
+}
+
+/* Fix for Quill editor */
+.ql-container.ql-snow {
+    border: 1px solid var(--border-color);
+    border-top: 0;
+}
+
+.ql-toolbar.ql-snow {
+    border: 1px solid var(--border-color);
 }

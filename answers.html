@@ -1,4 +1,3 @@
-<!-- File: allgemeinbildung-textbox/answers.html -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -13,11 +12,10 @@
     <!-- Bereich zum Drucken eines einzelnen Textes -->
     <div id="printContent">
         <!-- Gespeichert-Indikator -->
-        <div id="saveIndicator">Gespeichert</div>
+        <div id="saveIndicator" style="opacity: 0; transition: opacity 0.5s;">Gespeichert</div>
         <h3>Dein Text:</h3>
-        <!-- This element will now show the header. If a subId exists, it will display "Thema: ..." -->
         <p id="assignmentInfo"></p>
-        <!-- This container will show the associated questions -->
+        <!-- New subId info section -->
         <div id="subIdInfo" class="sub-id-info"></div>
         <div id="answerBox" class="quill-editor"></div>
         <pre id="answerText" style="display: none;"></pre>
@@ -27,7 +25,7 @@
     <div class="button-container">
         <button id="downloadAllBtn">Dieser Text drucken / als PDF speichern</button>
         <button id="exportTxtBtn">Antwort als TXT exportieren</button>
-        <button id="clearBtn" onclick="clearLocalStorage()">Text löschen</button>
+        <button id="clearBtn">Text löschen</button>
     </div>
 
     <!-- Anzeige des gespeicherten Textes -->
