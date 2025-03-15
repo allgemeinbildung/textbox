@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Alle Aufgaben drucken</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Additional inline styles for this page */
+    body {
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      color: #003f5c;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px 0;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background-color: #4CAF50;
+      color: #fff;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    details {
+      margin-top: 20px;
+    }
+    details summary {
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    /* Print styles for the print window */
+    @media print {
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      h2 {
+        color: #003f5c;
+      }
+      h3 {
+        color: #2f4b7c;
+      }
+      hr {
+        border: 0;
+        border-top: 1px solid #ccc;
+        margin: 20px 0;
+      }
+      .questions-print {
+        margin-bottom: 15px;
+        font-style: italic;
+      }
+      .questions-print div {
+        margin-bottom: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1 id="pageHeading"></h1>
+  <button id="printAllBtn">Alle Aufgaben drucken</button>
+  <details open>
+    <summary>Gespeicherte Daten anzeigen</summary>
+    <div id="assignmentData"></div>
+  </details>
+  
+  <script>
+    // Storage key prefixes (same as in your existing code)
+    const STORAGE_PREFIX = 'boxsuk-assignment_';
+    const SUB_STORAGE_PREFIX = 'boxsuk-sub_';
+    const QUESTIONS_PREFIX = 'boxsuk-questions_';
+
+    // Get assignmentId from the URL query parameters
+    function getAssignmentId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('assignmentId') || 'defaultAssignment';
+    }
+    
+    const assignmentId = getAssignmentId();
+
+    // Set the heading text to "Aufgaben {assignmentId}"
+    document.getElementById('pageHeading').textContent = `Aufgaben ${assignmentId}`;
+
+    // Function to fetch and format all saved data for the given assignmentId
+    function getAssignmentContent(assignmentId) {
+      let contentHtml = '';
+      // Main assignment content (without subId)
+      const mainKey = STORAGE_PREFIX + assignmentId;
+      const mainContent = localStorage.getItem(mainKey);
+      if (mainContent) {
+        contentHtml += `<h2>Aufgabe: ${assignmentId}</h2>`;
+        contentHtml += `<div>${mainContent}</div><hr>`;
+      }
+      // Gather sub assignments (keys with subId)
+      const subPrefix = STORAGE_PREFIX + assignmentId + '_' + SUB_STORAGE_PREFIX;
+      let subKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(subPrefix)) {
+          subKeys.push(key);
+        }
+      }
+      // Sort the sub assignment keys by their subId (the part after the prefix)
+      subKeys.sort((a, b) => {
+        const subIdA = a.substring(subPrefix.length);
+        const subIdB = b.substring(subPrefix.length);
+        return subIdA.localeCompare(subIdB);
+      });
+      // Process each sub assignment
+      subKeys.forEach(key => {
+        const subId = key.substring(subPrefix.length);
+        const subContent = localStorage.getItem(key);
+        // Fetch corresponding questions if available
+        const questionsKey = QUESTIONS_PREFIX + assignmentId + '_' + SUB_STORAGE_PREFIX + subId;
+        let questionsHtml = '';
+        const questionsData = localStorage.getItem(questionsKey);
+        if (questionsData) {
+          try {
+            const questions = JSON.parse(questionsData);
+            if (questions && Object.keys(questions).length > 0) {
+              questionsHtml += '<div class="questions-print"><em>';
+              Object.values(questions).forEach(q => {
+                questionsHtml += `<div>- ${q}</div>`;
+              });
+              questionsHtml += '</em></div>';
+            }
+          } catch(e) {
+            console.error("Error parsing questions for", subId, e);
+          }
+        }
+        contentHtml += `<h3>Thema: ${subId}</h3>`;
+        contentHtml += questionsHtml;
+        contentHtml += `<div>${subContent}</div><hr>`;
+      });
+      return contentHtml;
+    }
+    
+    // Display the fetched assignment data in the open dropdown
+    document.getElementById('assignmentData').innerHTML = getAssignmentContent(assignmentId);
+
+    // Function to open a new window with the assignment content and trigger printing
+    function printAssignment() {
+      const content = getAssignmentContent(assignmentId);
+      if (!content) {
+        alert("Keine gespeicherten Antworten für diese Aufgabe gefunden.");
+        return;
+      }
+      const printWindow = window.open('', '', 'height=800,width=800');
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Alle Aufgaben</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h2 { color: #003f5c; }
+            h3 { color: #2f4b7c; }
+            hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
+            .questions-print { margin-bottom: 15px; font-style: italic; }
+            .questions-print div { margin-bottom: 5px; }
+          </style>
+        </head>
+        <body>
+          ${content}
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.onload = function() {
+        printWindow.print();
+        printWindow.close();
+      };
+    }
+    
+    // Bind the print function to the button click event
+    document.getElementById('printAllBtn').addEventListener('click', printAssignment);
+  </script>
+</body>
+</html>
