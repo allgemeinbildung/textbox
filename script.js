@@ -1,6 +1,7 @@
 // Constants for storage keys
 const STORAGE_PREFIX = 'boxsuk-assignment_';
 const SUB_STORAGE_PREFIX = 'boxsuk-sub_';
+const QUESTIONS_PREFIX = 'boxsuk-questions_'; // New prefix for storing questions
 
 // Global variable for the Quill editor
 let quill;
@@ -52,7 +53,16 @@ function showSaveIndicator() {
     }, 2000);
 }
 
-// Save text to localStorage (removed saved-answer display call)
+// Save questions to localStorage - new function
+function saveQuestionsToLocal(assignmentId, subId, questions) {
+    if (!subId || Object.keys(questions).length === 0) return;
+    
+    const storageKey = `${QUESTIONS_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`;
+    localStorage.setItem(storageKey, JSON.stringify(questions));
+    console.log(`Questions for ${storageKey} saved`);
+}
+
+// Save text to localStorage
 function saveToLocal() {
     if (!quill) return;
     
@@ -75,7 +85,7 @@ function saveToLocal() {
     showSaveIndicator();
 }
 
-// Clear localStorage - only boxsuk-prefixed keys (removed saved-answer update)
+// Clear localStorage - only boxsuk-prefixed keys
 function clearLocalStorage() {
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -137,7 +147,7 @@ function printSingleAnswer(title, content, questions = {}) {
     window.print();
 }
 
-// Print all answers (used in print_page.html)
+// Print all answers
 function printAllAnswers(content) {
     const printWindow = window.open('', '', 'height=800,width=800');
     printWindow.document.write(`
@@ -168,6 +178,39 @@ function printAllAnswers(content) {
     };
 }
 
+// Get questions from localStorage for a specific subId
+function getQuestionsFromStorage(assignmentId, subId) {
+    const storageKey = `${QUESTIONS_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`;
+    const storedQuestions = localStorage.getItem(storageKey);
+    
+    if (storedQuestions) {
+        try {
+            return JSON.parse(storedQuestions);
+        } catch (e) {
+            console.error(`Error parsing questions for ${subId}:`, e);
+            return {};
+        }
+    }
+    
+    return {};
+}
+
+// Get questions HTML from localStorage
+function getQuestionsHtmlFromStorage(assignmentId, subId) {
+    const questions = getQuestionsFromStorage(assignmentId, subId);
+    
+    if (Object.keys(questions).length > 0) {
+        let html = '<div class="questions-print"><em>';
+        Object.values(questions).forEach(question => {
+            html += `<div>- ${question}</div>`;
+        });
+        html += '</em></div>';
+        return html;
+    }
+    
+    return '';
+}
+
 // Print all subIds for the current assignment
 function printAllSubIdsForAssignment() {
     const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
@@ -192,7 +235,7 @@ function printAllSubIdsForAssignment() {
         const content = localStorage.getItem(key);
         if (content) {
             const subId = key.replace(assignmentPrefix, '');
-            const questionsHtml = getQuestionsForSubId(subId);
+            const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId);
             allContent += `<h3>Thema: ${subId}</h3>`;
             if (questionsHtml) {
                 allContent += questionsHtml;
@@ -203,30 +246,6 @@ function printAllSubIdsForAssignment() {
     });
     
     printAllAnswers(allContent);
-}
-
-// Get questions HTML for a specific subId
-function getQuestionsForSubId(subId) {
-    const params = getQueryParams();
-    if (params.subIds && params.subIds.includes(subId)) {
-        const index = params.subIds.indexOf(subId);
-        const questions = {};
-        Object.keys(params).forEach(key => {
-            if (key.startsWith('question') && params[key] && params[key][index]) {
-                questions[key] = params[key][index];
-            }
-        });
-        
-        if (Object.keys(questions).length > 0) {
-            let html = '<div class="questions-print"><em>';
-            Object.values(questions).forEach(question => {
-                html += `<div>- ${question}</div>`;
-            });
-            html += '</em></div>';
-            return html;
-        }
-    }
-    return '';
 }
 
 // Update subId info in the UI
@@ -302,8 +321,13 @@ document.addEventListener("DOMContentLoaded", function() {
     
     updateSubIdInfo();
     
+    // Save current questions to localStorage
+    const { subId, questions } = getCurrentSubIdAndQuestions();
+    if (subId && Object.keys(questions).length > 0) {
+        saveQuestionsToLocal(assignmentId, subId, questions);
+    }
+    
     if (quill) {
-        const { subId } = getCurrentSubIdAndQuestions();
         const storageKey = subId 
             ? `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`
             : `${STORAGE_PREFIX}${assignmentId}`;
@@ -335,11 +359,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 alert("Keine gespeicherte Antwort zum Drucken vorhanden.");
             }
         });
-    }
-    
-    const clearBtn = document.getElementById('clearBtn');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', clearLocalStorage);
     }
     
     // Append print all subIds button to the button container
