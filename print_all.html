@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Aufgabe drucken</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Inline styles specific to this page */
+    body {
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      color: #003f5c;
+    }
+    .assignment-controls {
+      margin-bottom: 20px;
+    }
+    label {
+      font-size: 14px;
+    }
+    input[type="text"] {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin: 0 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background-color: #4CAF50;
+      color: #fff;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    /* Print styles */
+    @media print {
+      .assignment-controls,
+      input,
+      button {
+        display: none;
+      }
+      body {
+        padding: 20px;
+      }
+      h2 { color: #003f5c; }
+      h3 { color: #2f4b7c; }
+      hr {
+        border: 0;
+        border-top: 1px solid #ccc;
+        margin: 20px 0;
+      }
+      .questions-print {
+        margin-bottom: 15px;
+        font-style: italic;
+      }
+      .questions-print div {
+        margin-bottom: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Drucke gespeicherte Aufgabe</h1>
+  <div class="assignment-controls">
+    <label for="assignmentInput">Assignment ID:</label>
+    <input type="text" id="assignmentInput" placeholder="z.B. defaultAssignment">
+    <button id="loadAssignmentBtn">Laden</button>
+    <button id="printAssignmentBtn" style="display:none;">Aufgabe drucken / als PDF speichern</button>
+  </div>
+  <div id="assignmentData">
+    <!-- Geladene Inhalte werden hier angezeigt -->
+  </div>
+
+  <script>
+    // Storage key constants (matching the ones in your script.js)
+    const STORAGE_PREFIX = 'boxsuk-assignment_';
+    const SUB_STORAGE_PREFIX = 'boxsuk-sub_';
+    const QUESTIONS_PREFIX = 'boxsuk-questions_';
+
+    // Fetch and format assignment content (main and sub assignments) for a given assignmentId
+    function getAssignmentContent(assignmentId) {
+      let contentHtml = '';
+      // Main assignment content
+      const mainKey = STORAGE_PREFIX + assignmentId;
+      const mainContent = localStorage.getItem(mainKey);
+      if (mainContent) {
+        contentHtml += `<h2>Aufgabe: ${assignmentId}</h2>`;
+        contentHtml += `<div>${mainContent}</div><hr>`;
+      }
+      // Sub assignments (if any)
+      const subPrefix = STORAGE_PREFIX + assignmentId + '_' + SUB_STORAGE_PREFIX;
+      let subKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(subPrefix)) {
+          subKeys.push(key);
+        }
+      }
+      // Sort the sub assignment keys by their subId (the part after the prefix)
+      subKeys.sort((a, b) => {
+        const subIdA = a.substring(subPrefix.length);
+        const subIdB = b.substring(subPrefix.length);
+        return subIdA.localeCompare(subIdB);
+      });
+      // Process each sub assignment
+      subKeys.forEach(key => {
+        const subId = key.substring(subPrefix.length);
+        const subContent = localStorage.getItem(key);
+        // Get corresponding questions (if stored)
+        const questionsKey = QUESTIONS_PREFIX + assignmentId + '_' + SUB_STORAGE_PREFIX + subId;
+        let questionsHtml = '';
+        const questionsData = localStorage.getItem(questionsKey);
+        if (questionsData) {
+          try {
+            const questions = JSON.parse(questionsData);
+            if (questions && Object.keys(questions).length > 0) {
+              questionsHtml += '<div class="questions-print"><em>';
+              Object.values(questions).forEach(q => {
+                questionsHtml += `<div>- ${q}</div>`;
+              });
+              questionsHtml += '</em></div>';
+            }
+          } catch(e) {
+            console.error("Fehler beim Parsen der Fragen für", subId, e);
+          }
+        }
+        contentHtml += `<h3>Thema: ${subId}</h3>`;
+        contentHtml += questionsHtml;
+        contentHtml += `<div>${subContent}</div><hr>`;
+      });
+      return contentHtml;
+    }
+
+    // Load the assignment data based on user input
+    function loadAssignment() {
+      const assignmentId = document.getElementById('assignmentInput').value.trim();
+      if (!assignmentId) {
+        alert("Bitte geben Sie eine Assignment ID ein.");
+        return;
+      }
+      const content = getAssignmentContent(assignmentId);
+      const assignmentDataDiv = document.getElementById('assignmentData');
+      if (content === '') {
+        assignmentDataDiv.innerHTML = `<p>Keine gespeicherten Daten für die Assignment ID "${assignmentId}" gefunden.</p>`;
+        document.getElementById('printAssignmentBtn').style.display = 'none';
+      } else {
+        assignmentDataDiv.innerHTML = content;
+        document.getElementById('printAssignmentBtn').style.display = 'inline-block';
+      }
+    }
+
+    // Open a print window with the loaded assignment content and trigger printing
+    function printAssignment() {
+      const assignmentId = document.getElementById('assignmentInput').value.trim();
+      const content = getAssignmentContent(assignmentId);
+      if (!content) {
+        alert("Keine gespeicherten Daten zum Drucken gefunden.");
+        return;
+      }
+      const printWindow = window.open('', '', 'height=800,width=800');
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Aufgabe: ${assignmentId}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h2 { color: #003f5c; }
+            h3 { color: #2f4b7c; }
+            hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
+            .questions-print { margin-bottom: 15px; font-style: italic; }
+            .questions-print div { margin-bottom: 5px; }
+          </style>
+        </head>
+        <body>
+          ${content}
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.onload = function() {
+        printWindow.print();
+        printWindow.close();
+      };
+    }
+
+    document.getElementById('loadAssignmentBtn').addEventListener('click', loadAssignment);
+    document.getElementById('printAssignmentBtn').addEventListener('click', printAssignment);
+  </script>
+</body>
+</html>
