@@ -1,7 +1,7 @@
 // Constants for storage keys
-const STORAGE_PREFIX = 'boxsuk-assignment_';
-const SUB_STORAGE_PREFIX = 'boxsuk-sub_';
-const QUESTIONS_PREFIX = 'boxsuk-questions_'; // New prefix for storing questions
+const STORAGE_PREFIX = 'textbox-assignment_';
+const SUB_STORAGE_PREFIX = 'textbox-sub_';
+const QUESTIONS_PREFIX = 'textbox-questions_'; // New prefix for storing questions
 
 // Global variable for the Quill editor
 let quill;
@@ -85,7 +85,7 @@ function saveToLocal() {
     showSaveIndicator();
 }
 
-// Clear localStorage - only boxsuk-prefixed keys
+// Clear localStorage - only textbox-prefixed keys
 function clearLocalStorage() {
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -99,7 +99,7 @@ function clearLocalStorage() {
     
     if (quill) quill.setText('');
     
-    console.log("Alle gespeicherten boxsuk-Texte wurden gelöscht");
+    console.log("Alle gespeicherten textbox-Texte wurden gelöscht");
 }
 
 // Print a single answer
