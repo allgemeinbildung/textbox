@@ -6,6 +6,19 @@ const QUESTIONS_PREFIX = 'textbox-questions_'; // New prefix for storing questio
 // Global variable for the Quill editor
 let quill;
 
+// Markdown parsing function
+function parseMarkdown(text) {
+    if (!text) return '';
+    
+    // Parse bold (** or __)
+    text = text.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>');
+    
+    // Parse italic (* or _)
+    text = text.replace(/(\*|_)(.*?)\1/g, '<em>$2</em>');
+    
+    return text;
+}
+
 // Utility functions for URL parameters
 function getQueryParams() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -121,7 +134,7 @@ function printSingleAnswer(title, content, questions = {}) {
         questionsElement.className = 'questions-print';
         questionsElement.innerHTML = '<em>';
         Object.values(questions).forEach(question => {
-            questionsElement.innerHTML += `<div>- ${question}</div>`;
+            questionsElement.innerHTML += `<div>- ${parseMarkdown(question)}</div>`;
         });
         questionsElement.innerHTML += '</em>';
         printDiv.appendChild(questionsElement);
@@ -202,7 +215,7 @@ function getQuestionsHtmlFromStorage(assignmentId, subId) {
     if (Object.keys(questions).length > 0) {
         let html = '<div class="questions-print"><em>';
         Object.values(questions).forEach(question => {
-            html += `<div>- ${question}</div>`;
+            html += `<div>- ${parseMarkdown(question)}</div>`;
         });
         html += '</em></div>';
         return html;
@@ -261,7 +274,7 @@ function updateSubIdInfo() {
         if (Object.keys(questions).length > 0) {
             html += '<div class="questions-container"><em>';
             Object.values(questions).forEach(question => {
-                html += `<div>- ${question}</div>`;
+                html += `<div>- ${parseMarkdown(question)}</div>`;
             });
             html += '</em></div>';
         }
