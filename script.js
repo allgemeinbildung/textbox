@@ -301,7 +301,7 @@
 
         // Extract suffix for display (assuming format like 'assignment_ChapterName')
         const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
-        let allContent = `<h2>Kapitel: ${assignmentSuffix}</h2>`; // Main title for the whole chapter
+        let allContent = `<h2>Aufgabe: ${assignmentSuffix}</h2>`; // Main title for the whole chapter
 
         // Sort keys by subId for consistent order
         storageKeys.sort((a, b) => {
@@ -383,7 +383,7 @@
         // Display Assignment Info (if element exists)
         const assignmentInfo = document.getElementById('assignmentInfo');
         if (assignmentInfo) {
-             assignmentInfo.textContent = assignmentSuffix ? `Kapitel: ${assignmentSuffix}` : 'Kapitel';
+             assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Kapitel';
         }
 
         // Initialize Quill Editor (if element exists)
@@ -472,7 +472,7 @@
                  }
 
                 const { subId, questions } = getCurrentSubIdAndQuestions();
-                let title = `Kapitel: ${assignmentSuffix}`;
+                let title = `Aufgabe: ${assignmentSuffix}`;
                 if(subId) {
                     title += ` - Thema: ${subId}`;
                 }
