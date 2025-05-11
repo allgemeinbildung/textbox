@@ -158,6 +158,9 @@
             alert("Bitte erlauben Sie Pop-up-Fenster, um drucken zu können.");
             return;
         }
+        const lineHeight = '1.6em'; // Define base line height for consistency
+        const lineColor = '#d2d2d2'; // Light gray for lines
+
         printWindow.document.write(`
             <!DOCTYPE html>
             <html lang="de">
@@ -165,24 +168,78 @@
                 <meta charset="UTF-8">
                 <title>${printWindowTitle}</title>
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    h2 { color: #003f5c; margin-top: 1.5em; margin-bottom: 0.5em; }
-                    h3 { color: #2f4b7c; margin-top: 1em; margin-bottom: 0.3em; page-break-after: avoid; }
-                    hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
-                    .questions-print { margin-bottom: 15px; }
-                    .questions-print div { margin-bottom: 5px; }
-                    .questions-print strong { color: #004085; font-weight: bold; }
-                    .questions-print em { color: #004085; font-style: italic; }
-                    ul, ol { margin-left: 20px; padding-left: 20px; }
-                    li { margin-bottom: 5px; }
-                    p { margin-bottom: 10px; line-height: 1.4; }
+                    body {
+                        font-family: Arial, sans-serif;
+                        color: #333; /* Dark gray text for readability */
+                        line-height: ${lineHeight};
+                        padding: ${lineHeight}; /* Padding around the page, equal to one line */
+                        margin: 0;
+
+                        /* Lined paper effect */
+                        background-color: #fdfdfa; /* Slightly off-white paper color */
+                        background-image: linear-gradient(to bottom, transparent 0%, transparent calc(${lineHeight} - 1px), ${lineColor} calc(${lineHeight} - 1px), ${lineColor} ${lineHeight});
+                        background-size: 100% ${lineHeight};
+                        background-position: 0 0; /* Start lines from top-left of padding box */
+                        background-repeat: repeat-y;
+
+                        /* Crucial for printing background graphics */
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+
+                    /* Ensure common text elements inherit line-height and have transparent backgrounds */
+                    h1, h2, h3, h4, h5, h6, p, li, div, blockquote, pre,
+                    .questions-print, .questions-print div,
+                    .sub-assignment-block, .sub-assignment-block > div,
+                    .ql-editor, .ql-editor p, .ql-editor ol, .ql-editor ul, .ql-editor li {
+                        line-height: inherit; /* Inherit from body for alignment */
+                        background-color: transparent !important; /* Ensure no element hides the lines */
+                    }
+
+                    /* Adjust margins to align with the line grid */
+                    h2 {
+                        color: #003f5c;
+                        margin-top: ${lineHeight}; 
+                        margin-bottom: ${lineHeight};
+                    }
+                    h3 {
+                        color: #2f4b7c;
+                        margin-top: ${lineHeight};
+                        margin-bottom: ${lineHeight};
+                        page-break-after: avoid;
+                    }
+                    p, .ql-editor p, .ql-editor li { /* Quill paragraphs and list items */
+                        margin-top: 0 !important;
+                        margin-bottom: 0 !important; /* Remove bottom margin to sit on lines */
+                    }
+                     ul, ol, .ql-editor ul, .ql-editor ol {
+                        margin-top: 0;
+                        margin-bottom: ${lineHeight}; /* Space after a list */
+                        padding-left: 2em; /* Standard list indentation */
+                    }
+                    li {
+                        margin-bottom: 0; /* Handled by line-height */
+                    }
+                    hr {
+                        border: 0;
+                        height: 1px;
+                        background-color: #999; /* Make hr a visible solid line */
+                        margin: ${lineHeight} 0; /* Align with grid */
+                    }
+                    .questions-print {
+                        margin-top: 0; /* Adjusted if needed */
+                        margin-bottom: ${lineHeight};
+                    }
+                    .sub-assignment-block {
+                        page-break-inside: avoid;
+                        margin-bottom: ${lineHeight}; /* Space after a block */
+                        padding-top: 0.1px; /* Fixes potential margin collapsing issue, ensuring block starts "on" a line */
+                    }
+                    .sub-assignment-block.new-page {
+                        page-break-before: always;
+                    }
                     strong { font-weight: bold; }
                     em { font-style: italic; }
-                    .sub-assignment-block { page-break-inside: avoid; }
-                    .sub-assignment-block.new-page { page-break-before: always; }
-                    @media print {
-                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                    }
                 </style>
             </head>
             <body>${content}</body>
@@ -248,7 +305,7 @@
                 if (questionsHtml) {
                     allContent += questionsHtml;
                 }
-                allContent += `<div>${content}</div>`;
+                allContent += `<div>${content}</div>`; // This div wraps the Quill content
                 allContent += `</div>`;
                 if (index < storageKeys.length - 1) {
                     allContent += `<hr>`;
@@ -290,35 +347,25 @@
         };
     }
 
-    // Moved debouncedSave definition here to be accessible by adjustEditorHeight if needed (though not directly used by it)
     const debouncedSave = debounce(saveToLocal, 1500);
 
-    // --- Function to adjust editor height ---
     function adjustEditorHeight() {
         if (!quill || !quill.root) return;
-
-        const editorNode = quill.root; // This is the .ql-editor div (content area)
-
-        // Ensure box-sizing is applied before scrollHeight calculation for consistency
-        editorNode.style.boxSizing = 'border-box'; 
-        editorNode.style.height = 'auto'; // Reset height to allow scrollHeight to be calculated correctly
-
+        const editorNode = quill.root;
+        editorNode.style.boxSizing = 'border-box';
+        editorNode.style.height = 'auto';
         let scrollHeight = editorNode.scrollHeight;
-        const maxHeight = 300; // Define a maximum height in pixels (e.g., ~10-12 lines)
-
+        const maxHeight = 300;
         if (scrollHeight > maxHeight) {
             editorNode.style.height = maxHeight + 'px';
-            editorNode.style.overflowY = 'auto'; // Show scrollbar when content exceeds max-height
+            editorNode.style.overflowY = 'auto';
         } else {
-            // CSS min-height on #answerBox .ql-editor will ensure it doesn't get too small
             editorNode.style.height = scrollHeight + 'px';
-            editorNode.style.overflowY = 'hidden'; // Hide scrollbar if content is less than max-height
+            editorNode.style.overflowY = 'hidden';
         }
     }
     const debouncedAdjustEditorHeight = debounce(adjustEditorHeight, 150);
 
-
-    // --- Initialization Code ---
     document.addEventListener("DOMContentLoaded", function() {
         const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
         const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
@@ -342,27 +389,20 @@
                         ]
                     }
                 });
-
+                if (quill.root) {
+                    quill.root.style.overflowY = 'hidden';
+                    quill.root.style.boxSizing = 'border-box';
+                }
                 quill.root.addEventListener('paste', function(e) {
                     e.preventDefault();
                     alert("Einfügen von Inhalten ist in diesem Editor deaktiviert.");
                 });
-                
-                // Initial style setup for dynamic height
-                if (quill.root) {
-                    quill.root.style.overflowY = 'hidden'; // Start with hidden scrollbar
-                    quill.root.style.boxSizing = 'border-box'; // Ensure correct box model for height calculations
-                }
-
-
-                // Modified text-change listener
                 quill.on('text-change', function(delta, oldDelta, source) {
                     if (source === 'user') {
-                        debouncedSave(); // Existing call to save content
+                        debouncedSave();
                     }
-                    adjustEditorHeight(); // Adjust height on every text change
+                    adjustEditorHeight();
                 });
-
                 const { subId } = getCurrentSubIdAndQuestions();
                 const storageKey = subId
                     ? `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`
@@ -374,11 +414,7 @@
                 } else {
                     console.log(`Kein gespeicherter Text für ${storageKey} gefunden`);
                 }
-
-                // Initial height adjustment after loading content and Quill initialization
                 adjustEditorHeight();
-
-
             } catch (error) {
                 console.error("Failed to initialize Quill:", error);
                 answerBox.innerHTML = "Fehler beim Laden des Editors.";
@@ -388,7 +424,6 @@
         }
 
         updateSubIdInfo();
-
         const { subId: currentSubId, questions: currentQuestions } = getCurrentSubIdAndQuestions();
         if (currentSubId && Object.keys(currentQuestions).length > 0) {
             saveQuestionsToLocal(assignmentId, currentSubId, currentQuestions);
@@ -412,6 +447,8 @@
                 if(subId) {
                     title += ` - Thema: ${subId}`;
                 }
+                // For single answer print, we could use similar styling, but it's not requested here.
+                // For now, it uses the browser's default print style for the main page content.
                 printSingleAnswer(title, content, questions);
             });
         }
@@ -428,10 +465,8 @@
             printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment);
         }
         
-        // Add resize listener for editor height
         window.addEventListener('resize', debouncedAdjustEditorHeight);
-
         console.log("Initialization complete (within IIFE)");
-    }); // End DOMContentLoaded listener
+    });
 
-})(); // End IIFE
+})();
