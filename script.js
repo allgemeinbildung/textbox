@@ -146,28 +146,26 @@
         if (Object.keys(questions).length > 0) {
             const questionsElement = document.createElement('div');
             questionsElement.className = 'questions-print'; // Use class for styling
-            let questionsHtml = ''; // Initialize as empty string
+            let questionsHtml = ''; 
             Object.values(questions).forEach(question => {
-                // Use parseMarkdown here for consistency if questions contain markdown
                 questionsHtml += `<div>- ${parseMarkdown(question)}</div>`;
             });
-            // The <em> wrapper is removed from here
             questionsElement.innerHTML = questionsHtml;
             printDiv.appendChild(questionsElement);
         }
 
         const contentElement = document.createElement('div');
-        contentElement.innerHTML = content; // Assumes content is valid HTML from Quill
+        contentElement.innerHTML = content; 
         printDiv.appendChild(contentElement);
 
         document.body.appendChild(printDiv);
-        document.body.classList.add('print-single'); // Add class to body for print styles
+        document.body.classList.add('print-single'); 
 
         function handleAfterPrint() {
-            document.body.classList.remove('print-single'); // Remove class after printing
+            document.body.classList.remove('print-single'); 
             const printDivAfter = document.getElementById('printSingleContent');
             if (printDivAfter) {
-                document.body.removeChild(printDivAfter); // Clean up the temporary div
+                document.body.removeChild(printDivAfter); 
             }
             window.removeEventListener('afterprint', handleAfterPrint);
             window.removeEventListener('beforeprint', handleBeforePrint);
@@ -203,25 +201,23 @@
                     hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
                     .questions-print {
                         margin-bottom: 15px;
-                        /* font-style: italic; MODIFIED: Removed */
-                        /* color: #333; MODIFIED: Removed, so it inherits body color or specific styles apply */
                     }
                     .questions-print div {
                         margin-bottom: 5px;
                     }
-                    .questions-print strong { /* ADDED */
-                        color: #333;
+                    .questions-print strong { 
+                        color: #004085; /* MODIFIED: Blue color */
                         font-weight: bold;
                     }
-                    .questions-print em { /* ADDED */
-                        color: #333;
+                    .questions-print em { 
+                        color: #004085; /* MODIFIED: Blue color */
                         font-style: italic;
                     }
                     ul, ol { margin-left: 20px; padding-left: 20px; }
                     li { margin-bottom: 5px; }
                     p { margin-bottom: 10px; line-height: 1.4; }
-                    strong { font-weight: bold; } /* General strong, can be overridden by .questions-print strong if needed */
-                    em { font-style: italic; }   /* General em, can be overridden by .questions-print em if needed */
+                    strong { font-weight: bold; } 
+                    em { font-style: italic; }   
                     h2 { page-break-before: always; }
                     h3 { page-break-after: avoid; }
                     .sub-assignment-block { page-break-inside: avoid; }
@@ -252,10 +248,10 @@
                 return JSON.parse(storedQuestions);
             } catch (e) {
                 console.error(`Error parsing questions for ${subId}:`, e);
-                return {}; // Return empty object on error
+                return {}; 
             }
         }
-        return {}; // Return empty object if not found
+        return {}; 
     }
 
     // Get questions HTML from localStorage (now local)
@@ -263,14 +259,14 @@
         const questions = getQuestionsFromStorage(assignmentId, subId);
 
         if (Object.keys(questions).length > 0) {
-            let html = '<div class="questions-print">'; // MODIFIED: Removed <em> wrapper
+            let html = '<div class="questions-print">'; 
             Object.values(questions).forEach(question => {
                 html += `<div>- ${parseMarkdown(question)}</div>`;
             });
-            html += '</div>'; // MODIFIED: Close div
+            html += '</div>'; 
             return html;
         }
-        return ''; // Return empty string if no questions
+        return ''; 
     }
 
     // Print all subIds for the current assignment (now local)
@@ -297,12 +293,12 @@
             const content = localStorage.getItem(key);
             if (content) {
                 const subId = key.replace(assignmentPrefix, '');
-                const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId); // This now returns HTML without global <em>
+                const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId); 
 
                 allContent += `<div class="sub-assignment-block">`;
                 allContent += `<h3>Thema: ${subId}</h3>`;
                 if (questionsHtml) {
-                    allContent += questionsHtml; // Add questions below sub-heading
+                    allContent += questionsHtml; 
                 }
                 allContent += `<div>${content}</div>`;
                 allContent += `</div>`;
@@ -328,11 +324,11 @@
             let html = `<h4>Thema: ${subId}</h4>`;
 
             if (Object.keys(questions).length > 0) {
-                html += '<div class="questions-container">'; // MODIFIED: Removed <em> wrapper
+                html += '<div class="questions-container">'; 
                 Object.values(questions).forEach(question => {
                     html += `<div>- ${parseMarkdown(question)}</div>`;
                 });
-                html += '</div>'; // MODIFIED: Close div
+                html += '</div>'; 
             }
 
             subIdInfoElement.innerHTML = html;
