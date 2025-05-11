@@ -45,11 +45,6 @@
         return getQueryParams()[param];
     }
 
-    // Deprecated - parentTitle seems unused based on code examination
-    // function getParentPageTitle() {
-    //     return getQueryParam('parentTitle') || '';
-    // }
-
     function getCurrentSubIdAndQuestions() {
         const params = getQueryParams();
         const subId = params.subIds ? params.subIds[0] : null;
@@ -78,8 +73,8 @@
 
         const storageKey = `${QUESTIONS_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`;
         try {
-             localStorage.setItem(storageKey, JSON.stringify(questions));
-             console.log(`Questions for ${storageKey} saved`);
+            localStorage.setItem(storageKey, JSON.stringify(questions));
+            console.log(`Questions for ${storageKey} saved`);
         } catch (e) {
             console.error("Error saving questions to localStorage:", e);
             // Handle potential storage full errors if necessary
@@ -94,9 +89,6 @@
         // Basic check for empty content (e.g., "<p><br></p>")
         if (htmlContent === '<p><br></p>' || htmlContent === '') {
             console.log("Attempted to save empty content. Skipping.");
-            // Optionally remove the item from storage if it exists?
-            // const storageKey = getStorageKey();
-            // localStorage.removeItem(storageKey);
             return;
         }
 
@@ -111,15 +103,12 @@
             console.log(`Text for ${storageKey} saved`);
             showSaveIndicator();
         } catch (e) {
-             console.error("Error saving content to localStorage:", e);
-             // Handle potential storage full errors if necessary
-             alert("Fehler beim Speichern. Möglicherweise ist der Speicherplatz voll.");
+            console.error("Error saving content to localStorage:", e);
+            alert("Fehler beim Speichern. Möglicherweise ist der Speicherplatz voll.");
         }
     }
 
     // Clear localStorage - only textbox-prefixed keys (now local to this IIFE)
-    // Note: This function isn't called by any button in the provided HTML,
-    // but kept here for completeness if it was intended for debugging/future use.
     function clearLocalStorage() {
         const keysToRemove = [];
         const prefix = 'textbox-'; // Clear all related keys
@@ -157,12 +146,12 @@
         if (Object.keys(questions).length > 0) {
             const questionsElement = document.createElement('div');
             questionsElement.className = 'questions-print'; // Use class for styling
-            let questionsHtml = '<em>'; // Use em for italic styling via CSS
+            let questionsHtml = ''; // Initialize as empty string
             Object.values(questions).forEach(question => {
                 // Use parseMarkdown here for consistency if questions contain markdown
                 questionsHtml += `<div>- ${parseMarkdown(question)}</div>`;
             });
-            questionsHtml += '</em>';
+            // The <em> wrapper is removed from here
             questionsElement.innerHTML = questionsHtml;
             printDiv.appendChild(questionsElement);
         }
@@ -180,27 +169,21 @@
             if (printDivAfter) {
                 document.body.removeChild(printDivAfter); // Clean up the temporary div
             }
-            // Clean up listener to prevent memory leaks
             window.removeEventListener('afterprint', handleAfterPrint);
-            window.removeEventListener('beforeprint', handleBeforePrint); // Remove other listener too
+            window.removeEventListener('beforeprint', handleBeforePrint);
         }
 
         function handleBeforePrint() {
-             // Ensure content is visible right before printing
             printDiv.style.visibility = 'visible';
         }
 
-        // Add listeners
         window.addEventListener('beforeprint', handleBeforePrint);
         window.addEventListener('afterprint', handleAfterPrint);
 
-        // Trigger print
         window.print();
     }
 
     // Print all answers (Helper for printing content in a new window - now local)
-    // This specific function is slightly different from the implementation
-    // in print_page.html, but serves a similar purpose for structured content.
     function printFormattedContent(content, printWindowTitle = 'Alle Antworten') {
         const printWindow = window.open('', '', 'height=800,width=800');
         if (!printWindow) {
@@ -220,25 +203,31 @@
                     hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
                     .questions-print {
                         margin-bottom: 15px;
-                        font-style: italic;
-                        color: #333; /* Ensure readability */
+                        /* font-style: italic; MODIFIED: Removed */
+                        /* color: #333; MODIFIED: Removed, so it inherits body color or specific styles apply */
                     }
                     .questions-print div {
                         margin-bottom: 5px;
                     }
-                    /* Ensure Quill content like lists are printed correctly */
+                    .questions-print strong { /* ADDED */
+                        color: #333;
+                        font-weight: bold;
+                    }
+                    .questions-print em { /* ADDED */
+                        color: #333;
+                        font-style: italic;
+                    }
                     ul, ol { margin-left: 20px; padding-left: 20px; }
                     li { margin-bottom: 5px; }
                     p { margin-bottom: 10px; line-height: 1.4; }
-                    strong { font-weight: bold; }
-                    em { font-style: italic; }
-                    /* Add page break handling if needed */
-                    h2 { page-break-before: always; } /* Start each main assignment on new page */
-                    h3 { page-break-after: avoid; } /* Avoid breaking after sub-heading */
-                    .sub-assignment-block { page-break-inside: avoid; } /* Try keep sub-assignment together */
+                    strong { font-weight: bold; } /* General strong, can be overridden by .questions-print strong if needed */
+                    em { font-style: italic; }   /* General em, can be overridden by .questions-print em if needed */
+                    h2 { page-break-before: always; }
+                    h3 { page-break-after: avoid; }
+                    .sub-assignment-block { page-break-inside: avoid; }
 
                     @media print {
-                      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } /* Try to force background/color printing */
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                     }
                 </style>
             </head>
@@ -246,13 +235,10 @@
             </html>
         `);
         printWindow.document.close();
-        // Use timeout to ensure content is loaded before printing in most browsers
         setTimeout(() => {
-            printWindow.focus(); // Focus the new window
+            printWindow.focus();
             printWindow.print();
-            // Don't close immediately, user might need to interact with print dialog
-            // printWindow.close();
-        }, 500); // Adjust delay if needed
+        }, 500);
     }
 
 
@@ -277,12 +263,11 @@
         const questions = getQuestionsFromStorage(assignmentId, subId);
 
         if (Object.keys(questions).length > 0) {
-            let html = '<div class="questions-print"><em>';
+            let html = '<div class="questions-print">'; // MODIFIED: Removed <em> wrapper
             Object.values(questions).forEach(question => {
-                // Use parseMarkdown for consistency
                 html += `<div>- ${parseMarkdown(question)}</div>`;
             });
-            html += '</em></div>';
+            html += '</div>'; // MODIFIED: Close div
             return html;
         }
         return ''; // Return empty string if no questions
@@ -299,67 +284,62 @@
             return;
         }
 
-        // Extract suffix for display (assuming format like 'assignment_ChapterName')
         const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
-        let allContent = `<h2>Aufgabe: ${assignmentSuffix}</h2>`; // Main title for the whole chapter
+        let allContent = `<h2>Aufgabe: ${assignmentSuffix}</h2>`;
 
-        // Sort keys by subId for consistent order
         storageKeys.sort((a, b) => {
             const subIdA = a.replace(assignmentPrefix, '');
             const subIdB = b.replace(assignmentPrefix, '');
-            // Add numeric sort if subIds are numbers, otherwise localeCompare
-             return subIdA.localeCompare(subIdB, undefined, {numeric: true, sensitivity: 'base'});
+            return subIdA.localeCompare(subIdB, undefined, {numeric: true, sensitivity: 'base'});
         });
 
         storageKeys.forEach(key => {
-             const content = localStorage.getItem(key);
-             if (content) {
-                 const subId = key.replace(assignmentPrefix, '');
-                 const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId);
+            const content = localStorage.getItem(key);
+            if (content) {
+                const subId = key.replace(assignmentPrefix, '');
+                const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId); // This now returns HTML without global <em>
 
-                 // Wrap each sub-assignment in a div for better page break control potentially
-                 allContent += `<div class="sub-assignment-block">`;
-                 allContent += `<h3>Thema: ${subId}</h3>`; // Sub-heading for the topic
-                 if (questionsHtml) {
-                     allContent += questionsHtml; // Add questions below sub-heading
-                 }
-                 allContent += `<div>${content}</div>`; // The actual Quill content
-                 allContent += `</div>`; // Close sub-assignment block
-                 allContent += `<hr>`; // Separator between topics
-             }
+                allContent += `<div class="sub-assignment-block">`;
+                allContent += `<h3>Thema: ${subId}</h3>`;
+                if (questionsHtml) {
+                    allContent += questionsHtml; // Add questions below sub-heading
+                }
+                allContent += `<div>${content}</div>`;
+                allContent += `</div>`;
+                allContent += `<hr>`;
+            }
         });
 
-        // Remove the last <hr> if it exists
         if (allContent.endsWith('<hr>')) {
             allContent = allContent.slice(0, -4);
         }
 
-        printFormattedContent(allContent, `Alle Themen für Kapitel ${assignmentSuffix}`); // Use the helper print function
+        printFormattedContent(allContent, `Alle Themen für Kapitel ${assignmentSuffix}`);
     }
 
     // Update subId info in the UI (now local)
     function updateSubIdInfo() {
         const subIdInfoElement = document.getElementById('subIdInfo');
-        if (!subIdInfoElement) return; // Only run if element exists
+        if (!subIdInfoElement) return;
 
         const { subId, questions } = getCurrentSubIdAndQuestions();
 
         if (subId) {
-            let html = `<h4>Thema: ${subId}</h4>`; // Use h4 for topic title
+            let html = `<h4>Thema: ${subId}</h4>`;
 
             if (Object.keys(questions).length > 0) {
-                html += '<div class="questions-container"><em>'; // Use class for styling
+                html += '<div class="questions-container">'; // MODIFIED: Removed <em> wrapper
                 Object.values(questions).forEach(question => {
-                    html += `<div>- ${parseMarkdown(question)}</div>`; // Parse potential markdown in questions
+                    html += `<div>- ${parseMarkdown(question)}</div>`;
                 });
-                html += '</em></div>';
+                html += '</div>'; // MODIFIED: Close div
             }
 
             subIdInfoElement.innerHTML = html;
-            subIdInfoElement.style.display = 'block'; // Show the element
+            subIdInfoElement.style.display = 'block';
         } else {
-            subIdInfoElement.innerHTML = ''; // Clear content if no subId
-            subIdInfoElement.style.display = 'none'; // Hide the element
+            subIdInfoElement.innerHTML = '';
+            subIdInfoElement.style.display = 'none';
         }
     }
 
@@ -373,20 +353,16 @@
     }
 
     // --- Initialization Code ---
-    // This runs when the DOM is ready
     document.addEventListener("DOMContentLoaded", function() {
 
         const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
-        // Extract a cleaner name for display if possible (e.g., 'Kapitel 1' from 'assignment_Kapitel1')
         const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
 
-        // Display Assignment Info (if element exists)
         const assignmentInfo = document.getElementById('assignmentInfo');
         if (assignmentInfo) {
-             assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Kapitel';
+            assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Kapitel';
         }
 
-        // Initialize Quill Editor (if element exists)
         const answerBox = document.getElementById('answerBox');
         if (answerBox) {
             console.log("Initializing Quill editor");
@@ -398,78 +374,65 @@
                         toolbar: [
                             ['bold', 'italic', 'underline'],
                             [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                            ['clean'] // Remove formatting button
+                            ['clean']
                         ]
                     }
                 });
 
-                // Paste prevention
                 quill.root.addEventListener('paste', function(e) {
                     e.preventDefault();
                     alert("Einfügen von Inhalten ist in diesem Editor deaktiviert.");
                 });
 
-                // Debounced save on text change
-                const debouncedSave = debounce(saveToLocal, 1500); // Save 1.5 seconds after user stops typing
+                const debouncedSave = debounce(saveToLocal, 1500);
                 quill.on('text-change', function(delta, oldDelta, source) {
                     if (source === 'user') {
                         debouncedSave();
                     }
-                    // Optionally add monitoring for 'api' source here if desired
                 });
 
-                 // Load existing text
-                 const { subId } = getCurrentSubIdAndQuestions();
-                 const storageKey = subId
+                const { subId } = getCurrentSubIdAndQuestions();
+                const storageKey = subId
                     ? `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`
                     : `${STORAGE_PREFIX}${assignmentId}`;
 
-                 const savedText = localStorage.getItem(storageKey);
+                const savedText = localStorage.getItem(storageKey);
 
-                 if (savedText) {
-                    quill.root.innerHTML = savedText; // Load HTML content
+                if (savedText) {
+                    quill.root.innerHTML = savedText;
                     console.log(`Gespeicherten Text für ${storageKey} geladen`);
-                 } else {
+                } else {
                     console.log(`Kein gespeicherter Text für ${storageKey} gefunden`);
-                 }
+                }
 
             } catch (error) {
-                 console.error("Failed to initialize Quill:", error);
-                 answerBox.innerHTML = "Fehler beim Laden des Editors."; // Show error to user
+                console.error("Failed to initialize Quill:", error);
+                answerBox.innerHTML = "Fehler beim Laden des Editors.";
             }
         } else {
-             console.log("Element #answerBox not found. Quill not initialized.");
+            console.log("Element #answerBox not found. Quill not initialized.");
         }
 
-        // Update SubId Info display
         updateSubIdInfo();
 
-        // Save current questions to localStorage (if any)
         const { subId: currentSubId, questions: currentQuestions } = getCurrentSubIdAndQuestions();
         if (currentSubId && Object.keys(currentQuestions).length > 0) {
             saveQuestionsToLocal(assignmentId, currentSubId, currentQuestions);
         }
 
-
-        // --- Button Event Listeners ---
-        // Note: Assumes this script is primarily for answers.html layout
-
-        // Button to Print/Save CURRENT editor content as PDF
-        const downloadCurrentBtn = document.getElementById('downloadAllBtn'); // ID is confusing, maybe rename to 'printCurrentBtn'?
+        const downloadCurrentBtn = document.getElementById('downloadAllBtn');
         if (downloadCurrentBtn) {
-            // Rename button text for clarity
             downloadCurrentBtn.textContent = 'Aktuelle Antwort drucken / als PDF speichern';
             downloadCurrentBtn.addEventListener('click', function() {
                 if (!quill) {
-                     alert("Editor nicht initialisiert.");
-                     return;
+                    alert("Editor nicht initialisiert.");
+                    return;
                 }
                 const content = quill.root.innerHTML;
-                // Prevent printing empty content
-                 if (content === '<p><br></p>' || content === '') {
+                if (content === '<p><br></p>' || content === '') {
                     alert("Kein Inhalt zum Drucken vorhanden.");
                     return;
-                 }
+                }
 
                 const { subId, questions } = getCurrentSubIdAndQuestions();
                 let title = `Aufgabe: ${assignmentSuffix}`;
@@ -477,28 +440,22 @@
                     title += ` - Thema: ${subId}`;
                 }
 
-                printSingleAnswer(title, content, questions); // Use the local print function
+                printSingleAnswer(title, content, questions);
             });
         }
 
-        // Button to Print ALL saved sub-assignments for the CURRENT chapter
-        // Check if a button container exists to append to
         const buttonContainer = document.querySelector('.button-container');
         if (buttonContainer) {
-            // Check if the button already exists (e.g., defined in HTML)
             let printAllSubIdsBtn = document.getElementById('printAllSubIdsBtn');
 
             if (!printAllSubIdsBtn) {
-                 // Create the button if it doesn't exist
                 printAllSubIdsBtn = document.createElement('button');
                 printAllSubIdsBtn.id = 'printAllSubIdsBtn';
-                buttonContainer.appendChild(printAllSubIdsBtn); // Append to container
+                buttonContainer.appendChild(printAllSubIdsBtn);
             }
 
-            // Set text content and add listener
             printAllSubIdsBtn.textContent = 'Alle Themen dieses Kapitels drucken';
-            printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment); // Use the local print function
-
+            printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment);
         }
 
         console.log("Initialization complete (within IIFE)");
