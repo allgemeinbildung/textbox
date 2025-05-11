@@ -25,13 +25,23 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-.quill-editor {
-    height: 250px; 
+.quill-editor { /* This is the #answerBox container */
+    /* height: 250px; */ /* REMOVED - Height will be dynamic */
     margin-bottom: 10px;
-    background-color: var(--editor-background);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+    background-color: var(--editor-background); /* This applies to the outer container */
+    border: 1px solid var(--border-color);      /* This applies to the outer container */
+    border-radius: 4px;                         /* This applies to the outer container */
+    /* Quill's .ql-toolbar and .ql-container will be rendered inside this #answerBox */
 }
+
+/* Added/Modified for dynamic height */
+#answerBox .ql-editor {
+    min-height: 22px; /* Approximate height for one line of text content (e.g. 16px font-size * 1.4 line-height) */
+                      /* Quill's default Snow theme padding (12px top/bottom) will make the visual min-height ~46px */
+    box-sizing: border-box;
+    /* height and overflow-y will be managed by JavaScript */
+}
+
 
 .button-container, .button-container-main {
     display: flex;
@@ -42,7 +52,7 @@ body {
 
 button {
     padding: 8px 16px; 
-    font-size: 14px;     
+    font-size: 14px;      
     cursor: pointer;
     color: var(--button-text-color);
     border: none;
@@ -263,9 +273,21 @@ button:hover {
         width: 100%;
     }
 
-    .quill-editor {
+    /* Hide the interactive editor container in print */
+    .quill-editor { /* This refers to #answerBox */
         display: none;
     }
+    
+    /* Ensure .ql-editor content within print sections is visible if it was part of the saved content */
+    #printAllContent .ql-editor,
+    #printSingleContent .ql-editor {
+        visibility: visible; /* If answers are directly from Quill's innerHTML */
+        display: block !important; /* Ensure it's not hidden by other print rules */
+        height: auto !important;
+        overflow: visible !important;
+        border: none !important;
+    }
+
 
     pre {
         white-space: pre-wrap;
@@ -365,9 +387,12 @@ summary::after {
 
 .ql-container.ql-snow {
     border: 1px solid var(--border-color);
-    border-top: 0;
+    border-top: 0; /* Connects to toolbar border typically */
 }
 
 .ql-toolbar.ql-snow {
     border: 1px solid var(--border-color);
+    /* Ensure toolbar and container borders connect nicely */
+    /* border-bottom: 0; /* if .ql-container has border-top: 1px solid ... */
+    /* Default Quill Snow styles usually handle this okay */
 }
