@@ -196,8 +196,18 @@
                 <title>${printWindowTitle}</title>
                 <style>
                     body { font-family: Arial, sans-serif; padding: 20px; }
-                    h2 { color: #003f5c; margin-top: 1.5em; margin-bottom: 0.5em; }
-                    h3 { color: #2f4b7c; margin-top: 1em; margin-bottom: 0.3em;}
+                    h2 { 
+                        color: #003f5c; 
+                        margin-top: 1.5em; 
+                        margin-bottom: 0.5em; 
+                        /* Removed page-break-before: always; from here */
+                    }
+                    h3 { 
+                        color: #2f4b7c; 
+                        margin-top: 1em; 
+                        margin-bottom: 0.3em;
+                        page-break-after: avoid; /* Keep this to avoid break after h3 if possible */
+                    }
                     hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
                     .questions-print {
                         margin-bottom: 15px;
@@ -206,11 +216,11 @@
                         margin-bottom: 5px;
                     }
                     .questions-print strong { 
-                        color: #004085; /* MODIFIED: Blue color */
+                        color: #004085; 
                         font-weight: bold;
                     }
                     .questions-print em { 
-                        color: #004085; /* MODIFIED: Blue color */
+                        color: #004085; 
                         font-style: italic;
                     }
                     ul, ol { margin-left: 20px; padding-left: 20px; }
@@ -218,9 +228,12 @@
                     p { margin-bottom: 10px; line-height: 1.4; }
                     strong { font-weight: bold; } 
                     em { font-style: italic; }   
-                    h2 { page-break-before: always; }
-                    h3 { page-break-after: avoid; }
-                    .sub-assignment-block { page-break-inside: avoid; }
+                    .sub-assignment-block { 
+                        page-break-inside: avoid; /* Try to keep block content together */
+                    }
+                    .sub-assignment-block.new-page { 
+                        page-break-before: always; /* Start new page for these blocks */
+                    }
 
                     @media print {
                         body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -289,23 +302,31 @@
             return subIdA.localeCompare(subIdB, undefined, {numeric: true, sensitivity: 'base'});
         });
 
-        storageKeys.forEach(key => {
+        storageKeys.forEach((key, index) => {
             const content = localStorage.getItem(key);
             if (content) {
                 const subId = key.replace(assignmentPrefix, '');
                 const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId); 
 
-                allContent += `<div class="sub-assignment-block">`;
+                // Add 'new-page' class if it's not the first sub-assignment block
+                const blockClass = index > 0 ? 'sub-assignment-block new-page' : 'sub-assignment-block';
+
+                allContent += `<div class="${blockClass}">`;
                 allContent += `<h3>Thema: ${subId}</h3>`;
                 if (questionsHtml) {
                     allContent += questionsHtml; 
                 }
                 allContent += `<div>${content}</div>`;
                 allContent += `</div>`;
-                allContent += `<hr>`;
+                // Add <hr> only if it's not the last item to be printed.
+                // The final removal logic handles cases where the loop might end prematurely.
+                if (index < storageKeys.length - 1) {
+                    allContent += `<hr>`;
+                }
             }
         });
 
+        // This secondary check ensures no trailing <hr> if last items were skipped or only one item.
         if (allContent.endsWith('<hr>')) {
             allContent = allContent.slice(0, -4);
         }
