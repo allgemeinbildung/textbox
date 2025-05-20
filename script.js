@@ -354,7 +354,7 @@
                 if (answerContent) {
                     allContent += `<div class="lined-content">${answerContent}</div>`;
                 } else if (questionsHtml) { // If there were questions but no answer
-                    allContent += `<div class="lined-content"><p><em>Keine Antwort für dieses Thema erfasst.</em></p></div>`;
+                    allContent += `<div class="lined-content"><p><em>Antworten:</em></p></div>`;
                 }
                 allContent += `</div>`;
                 // Add <hr> only if it's not the last item that will have content
