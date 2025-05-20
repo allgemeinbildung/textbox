@@ -175,16 +175,17 @@
                         padding: ${lineHeight}; /* Padding around the page, equal to one line */
                         margin: 0;
 
-                        /* Lined paper effect */
+                        /* Crucial for printing background graphics */
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+
+                    .lined-content {
                         background-color: #fdfdfa; /* Slightly off-white paper color */
                         background-image: linear-gradient(to bottom, transparent 0%, transparent calc(${lineHeight} - 1px), ${lineColor} calc(${lineHeight} - 1px), ${lineColor} ${lineHeight});
                         background-size: 100% ${lineHeight};
                         background-position: 0 0; /* Start lines from top-left of padding box */
                         background-repeat: repeat-y;
-
-                        /* Crucial for printing background graphics */
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
                     }
 
                     /* Ensure common text elements inherit line-height and have transparent backgrounds */
@@ -305,7 +306,7 @@
                 if (questionsHtml) {
                     allContent += questionsHtml;
                 }
-                allContent += `<div>${content}</div>`; // This div wraps the Quill content
+                allContent += `<div class="lined-content">${content}</div>`; // Wrapped in lined content for background lines
                 allContent += `</div>`;
                 if (index < storageKeys.length - 1) {
                     allContent += `<hr>`;
