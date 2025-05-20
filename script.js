@@ -186,6 +186,7 @@
                         background-size: 100% ${lineHeight};
                         background-position: 0 0; /* Start lines from top-left of padding box */
                         background-repeat: repeat-y;
+                        min-height: calc(${lineHeight} * 20); /* Ensure at least 20 lines are shown */
                         min-height: 0;
                         max-height: calc(100vh - var(--content-offset, 0px));
                         overflow: hidden; /* Stop extra lines from spilling onto the next page */
