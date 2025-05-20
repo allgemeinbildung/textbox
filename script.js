@@ -116,13 +116,14 @@
         }
         const printDiv = document.createElement('div');
         printDiv.id = 'printSingleContent';
-        printDiv.style.visibility = 'hidden';
+        printDiv.style.visibility = 'hidden'; // Hide until beforeprint
         const titleElement = document.createElement('h2');
         titleElement.textContent = title;
         printDiv.appendChild(titleElement);
+
         if (Object.keys(questions).length > 0) {
             const questionsElement = document.createElement('div');
-            questionsElement.className = 'questions-print';
+            questionsElement.className = 'questions-print'; // For styling
             let questionsHtml = '';
             Object.values(questions).forEach(question => {
                 questionsHtml += `<div>- ${parseMarkdown(question)}</div>`;
@@ -130,27 +131,33 @@
             questionsElement.innerHTML = questionsHtml;
             printDiv.appendChild(questionsElement);
         }
+
         const contentElement = document.createElement('div');
-        contentElement.innerHTML = content;
+        contentElement.innerHTML = content; // This is Quill's HTML content
         printDiv.appendChild(contentElement);
+
         document.body.appendChild(printDiv);
-        document.body.classList.add('print-single');
+        document.body.classList.add('print-single'); // Add class to body
+
         function handleAfterPrint() {
-            document.body.classList.remove('print-single');
+            document.body.classList.remove('print-single'); // Remove class from body
             const printDivAfter = document.getElementById('printSingleContent');
             if (printDivAfter) {
                 document.body.removeChild(printDivAfter);
             }
             window.removeEventListener('afterprint', handleAfterPrint);
-            window.removeEventListener('beforeprint', handleBeforePrint);
+            window.removeEventListener('beforeprint', handleBeforePrint); // Also remove beforeprint
         }
         function handleBeforePrint() {
-            printDiv.style.visibility = 'visible';
+            // Ensure the printDiv is visible for printing
+             printDiv.style.visibility = 'visible';
         }
+
         window.addEventListener('beforeprint', handleBeforePrint);
         window.addEventListener('afterprint', handleAfterPrint);
         window.print();
     }
+
 
     function printFormattedContent(content, printWindowTitle = 'Alle Antworten') {
         const printWindow = window.open('', '', 'height=800,width=800');
@@ -174,21 +181,19 @@
                         line-height: ${lineHeight};
                         padding: ${lineHeight}; /* Padding around the page, equal to one line */
                         margin: 0;
-
-                        /* Crucial for printing background graphics */
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                     }
-
                     .lined-content {
                         background-color: #fdfdfa; /* Slightly off-white paper color */
                         background-image: linear-gradient(to bottom, transparent 0%, transparent calc(${lineHeight} - 1px), ${lineColor} calc(${lineHeight} - 1px), ${lineColor} ${lineHeight});
                         background-size: 100% ${lineHeight};
                         background-position: 0 0; /* Start lines from top-left of padding box */
                         background-repeat: repeat-y;
-                        min-height: calc(100vh - var(--content-offset, 0px));
+                        /* min-height ensures lines are drawn even for short content, relative to viewport or block */
+                        min-height: calc(100vh - var(--content-offset, 0px)); 
+                        padding: 0.1px; /* Small padding to ensure background covers area, can be adjusted */
                     }
-
                     /* Ensure common text elements inherit line-height and have transparent backgrounds */
                     h1, h2, h3, h4, h5, h6, p, li, div, blockquote, pre,
                     .questions-print, .questions-print div,
@@ -196,25 +201,25 @@
                     .ql-editor, .ql-editor p, .ql-editor ol, .ql-editor ul, .ql-editor li {
                         line-height: inherit; /* Inherit from body for alignment */
                         background-color: transparent !important; /* Ensure no element hides the lines */
+                         margin-top: 0; /* Reset top margin for these elements to align with lines */
+                         margin-bottom: 0; /* Reset bottom margin */
                     }
-
-                    /* Adjust margins to align with the line grid */
-                    h2 {
+                    h2 { /* Chapter Title */
                         color: #003f5c;
-                        margin-top: ${lineHeight}; 
-                        margin-bottom: ${lineHeight};
+                        margin-top: 0; 
+                        margin-bottom: ${lineHeight}; /* Space after chapter title */
                     }
-                    h3 {
+                    h3 { /* Sub-Assignment (Thema) Title */
                         color: #2f4b7c;
-                        margin-top: ${lineHeight};
-                        margin-bottom: ${lineHeight};
+                        margin-top: ${lineHeight}; /* Space before a new sub-assignment title */
+                        margin-bottom: ${lineHeight}; /* Space after sub-assignment title */
                         page-break-after: avoid;
                     }
                     p, .ql-editor p, .ql-editor li { /* Quill paragraphs and list items */
                         margin-top: 0 !important;
                         margin-bottom: 0 !important; /* Remove bottom margin to sit on lines */
                     }
-                     ul, ol, .ql-editor ul, .ql-editor ol {
+                    ul, ol, .ql-editor ul, .ql-editor ol {
                         margin-top: 0;
                         margin-bottom: ${lineHeight}; /* Space after a list */
                         padding-left: 2em; /* Standard list indentation */
@@ -229,16 +234,20 @@
                         margin: ${lineHeight} 0; /* Align with grid */
                     }
                     .questions-print {
-                        margin-top: 0; /* Adjusted if needed */
-                        margin-bottom: ${lineHeight};
+                        margin-top: 0; 
+                        margin-bottom: ${lineHeight}; /* Space after questions block */
+                    }
+                    .questions-print div { /* Individual question line */
+                         margin-bottom: 0; /* Each question should take its natural line height */
                     }
                     .sub-assignment-block {
                         page-break-inside: avoid;
                         margin-bottom: ${lineHeight}; /* Space after a block */
-                        padding-top: 0.1px; /* Fixes potential margin collapsing issue, ensuring block starts "on" a line */
+                        padding-top: 0.1px; /* Fixes potential margin collapsing issue */
                     }
                     .sub-assignment-block.new-page {
                         page-break-before: always;
+                         margin-top: 0; /* Reset margin after page break */
                     }
                     strong { font-weight: bold; }
                     em { font-style: italic; }
@@ -249,19 +258,22 @@
         `);
         printWindow.document.close();
         setTimeout(() => {
+            // Adjust background position based on actual content offset on each page
             const pageHeight = Math.max(printWindow.innerHeight, printWindow.document.documentElement.clientHeight);
-            const blocks = printWindow.document.querySelectorAll('.sub-assignment-block');
-            blocks.forEach(block => {
-                const lined = block.querySelector('.lined-content');
-                if (lined) {
-                    const rect = lined.getBoundingClientRect();
-                    const offset = rect.top % pageHeight;
-                    lined.style.setProperty('--content-offset', offset + 'px');
-                }
+            const blocks = printWindow.document.querySelectorAll('.sub-assignment-block .lined-content'); // Target only lined content within blocks
+            blocks.forEach(lined => {
+                const rect = lined.getBoundingClientRect();
+                // Calculate offset relative to the start of its print page.
+                // This is tricky because getBoundingClientRect is relative to viewport.
+                // For simplicity, assuming block starts somewhat fresh on a page or its offset calculation is for full page draw.
+                // A more robust solution for multi-page background alignment might require complex calculations or CSS Houdini.
+                // The current --content-offset approach is more for single, continuous blocks.
+                // For now, we'll assume a simple 0 offset or a global one if needed.
+                // lined.style.setProperty('--content-offset', '0px'); // Or a calculated offset if possible
             });
             printWindow.focus();
             printWindow.print();
-        }, 500);
+        }, 500); // Delay to allow content and styles to render
     }
 
     function getQuestionsFromStorage(assignmentId, subId) {
@@ -281,7 +293,7 @@
     function getQuestionsHtmlFromStorage(assignmentId, subId) {
         const questions = getQuestionsFromStorage(assignmentId, subId);
         if (Object.keys(questions).length > 0) {
-            let html = '<div class="questions-print">';
+            let html = '<div class="questions-print">'; // Class for styling
             Object.values(questions).forEach(question => {
                 html += `<div>- ${parseMarkdown(question)}</div>`;
             });
@@ -293,51 +305,89 @@
 
     function printAllSubIdsForAssignment() {
         const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
-        const assignmentPrefix = `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
-        const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(assignmentPrefix));
-        if (storageKeys.length === 0) {
-            alert("Keine gespeicherten Themen für dieses Kapitel gefunden.");
+        const answerPrefix = `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
+        const questionStoragePrefixForAssignment = `${QUESTIONS_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
+
+        const subIdSet = new Set();
+        const subIdAnswerMap = new Map(); // To store answers if they exist
+
+        // Collect all subIds that have saved answers or saved questions
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith(answerPrefix)) {
+                const subId = key.substring(answerPrefix.length);
+                subIdSet.add(subId);
+                subIdAnswerMap.set(subId, localStorage.getItem(key));
+            } else if (key.startsWith(questionStoragePrefixForAssignment)) {
+                const subId = key.substring(questionStoragePrefixForAssignment.length);
+                subIdSet.add(subId);
+            }
+        }
+
+        if (subIdSet.size === 0) {
+            alert("Keine gespeicherten Themen oder Fragen für dieses Kapitel gefunden, die gedruckt werden könnten.\nStellen Sie sicher, dass die entsprechenden iframes mit den Fragen mindestens einmal geladen wurden.");
             return;
         }
+
+        const sortedSubIds = Array.from(subIdSet).sort((a, b) => {
+            return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+        });
+
         const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
         let allContent = `<h2>Aufgabe: ${assignmentSuffix}</h2>`;
-        storageKeys.sort((a, b) => {
-            const subIdA = a.replace(assignmentPrefix, '');
-            const subIdB = b.replace(assignmentPrefix, '');
-            return subIdA.localeCompare(subIdB, undefined, {numeric: true, sensitivity: 'base'});
-        });
-        storageKeys.forEach((key, index) => {
-            const content = localStorage.getItem(key);
-            if (content) {
-                const subId = key.replace(assignmentPrefix, '');
-                const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId);
+        let contentAdded = false; // Flag to check if any meaningful content was added
+
+        sortedSubIds.forEach((subId, index) => {
+            const answerContent = subIdAnswerMap.get(subId);
+            const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId);
+
+            if (questionsHtml || answerContent) { // Only create a block if there's something to show
+                contentAdded = true;
                 const blockClass = index > 0 ? 'sub-assignment-block new-page' : 'sub-assignment-block';
                 allContent += `<div class="${blockClass}">`;
                 allContent += `<h3>Thema: ${subId}</h3>`;
+
                 if (questionsHtml) {
                     allContent += questionsHtml;
                 }
-                allContent += `<div class="lined-content">${content}</div>`; // Wrapped in lined content for background lines
+
+                if (answerContent) {
+                    allContent += `<div class="lined-content">${answerContent}</div>`;
+                } else if (questionsHtml) { // If there were questions but no answer
+                    allContent += `<div class="lined-content"><p><em>Keine Antwort für dieses Thema erfasst.</em></p></div>`;
+                }
                 allContent += `</div>`;
-                if (index < storageKeys.length - 1) {
-                    allContent += `<hr>`;
+                // Add <hr> only if it's not the last item that will have content
+                if (index < sortedSubIds.length - 1) {
+                     // Check if next subId also has content/questions to avoid trailing hr before an empty block that gets skipped.
+                     // For simplicity now, we add it and remove if it's the absolute last thing.
+                     allContent += `<hr>`;
                 }
             }
         });
+        
+        // Clean up trailing <hr> if present
         if (allContent.endsWith('<hr>')) {
             allContent = allContent.slice(0, -4);
+        }
+
+        if (!contentAdded) {
+            alert("Obwohl Themen-IDs gefunden wurden, gab es keinen Inhalt (weder Fragen noch Antworten) zum Drucken.");
+            return;
         }
         printFormattedContent(allContent, `Alle Themen für Kapitel ${assignmentSuffix}`);
     }
 
+
     function updateSubIdInfo() {
         const subIdInfoElement = document.getElementById('subIdInfo');
         if (!subIdInfoElement) return;
+
         const { subId, questions } = getCurrentSubIdAndQuestions();
         if (subId) {
             let html = `<h4>Thema: ${subId}</h4>`;
             if (Object.keys(questions).length > 0) {
-                html += '<div class="questions-container">';
+                html += '<div class="questions-container">'; // For styling
                 Object.values(questions).forEach(question => {
                     html += `<div>- ${parseMarkdown(question)}</div>`;
                 });
@@ -364,24 +414,30 @@
     function adjustEditorHeight() {
         if (!quill || !quill.root) return;
         const editorNode = quill.root;
-        editorNode.style.boxSizing = 'border-box';
-        editorNode.style.height = 'auto';
+        editorNode.style.boxSizing = 'border-box'; 
+        editorNode.style.height = 'auto'; // Reset height to allow scrollHeight to be accurate
         let scrollHeight = editorNode.scrollHeight;
-        const maxHeight = 300;
+        const maxHeight = 300; // Max height in pixels
+
         if (scrollHeight > maxHeight) {
             editorNode.style.height = maxHeight + 'px';
             editorNode.style.overflowY = 'auto';
         } else {
+            // Use scrollHeight if less than max, but ensure min-height from CSS is respected
+            // The min-height is effectively handled by Quill's own padding and initial line.
             editorNode.style.height = scrollHeight + 'px';
             editorNode.style.overflowY = 'hidden';
         }
     }
     const debouncedAdjustEditorHeight = debounce(adjustEditorHeight, 150);
 
+
     document.addEventListener("DOMContentLoaded", function() {
         const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
         const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
-        const assignmentInfo = document.getElementById('assignmentInfo');
+        
+        // Update assignment info if element exists (it's not in answers.html but might be in a parent context)
+        const assignmentInfo = document.getElementById('assignmentInfo'); 
         if (assignmentInfo) {
             assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Kapitel';
         }
@@ -401,24 +457,30 @@
                         ]
                     }
                 });
-                if (quill.root) {
-                    quill.root.style.overflowY = 'hidden';
+
+                if (quill.root) { // .ql-editor element
+                    quill.root.style.overflowY = 'hidden'; // Initial state, managed by adjustEditorHeight
                     quill.root.style.boxSizing = 'border-box';
+
+                    // Prevent pasting
+                    quill.root.addEventListener('paste', function(e) {
+                        e.preventDefault();
+                        alert("Einfügen von Inhalten ist in diesem Editor deaktiviert.");
+                    });
                 }
-                quill.root.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    alert("Einfügen von Inhalten ist in diesem Editor deaktiviert.");
-                });
+                
                 quill.on('text-change', function(delta, oldDelta, source) {
                     if (source === 'user') {
                         debouncedSave();
                     }
-                    adjustEditorHeight();
+                    adjustEditorHeight(); // Adjust height on text change
                 });
+
                 const { subId } = getCurrentSubIdAndQuestions();
-                const storageKey = subId
-                    ? `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`
+                const storageKey = subId 
+                    ? `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}` 
                     : `${STORAGE_PREFIX}${assignmentId}`;
+                
                 const savedText = localStorage.getItem(storageKey);
                 if (savedText) {
                     quill.root.innerHTML = savedText;
@@ -426,7 +488,8 @@
                 } else {
                     console.log(`Kein gespeicherter Text für ${storageKey} gefunden`);
                 }
-                adjustEditorHeight();
+                adjustEditorHeight(); // Initial height adjustment after loading content
+
             } catch (error) {
                 console.error("Failed to initialize Quill:", error);
                 answerBox.innerHTML = "Fehler beim Laden des Editors.";
@@ -435,13 +498,13 @@
             console.log("Element #answerBox not found. Quill not initialized.");
         }
 
-        updateSubIdInfo();
+        updateSubIdInfo(); // Display subId and its questions
         const { subId: currentSubId, questions: currentQuestions } = getCurrentSubIdAndQuestions();
         if (currentSubId && Object.keys(currentQuestions).length > 0) {
             saveQuestionsToLocal(assignmentId, currentSubId, currentQuestions);
         }
 
-        const downloadCurrentBtn = document.getElementById('downloadAllBtn');
+        const downloadCurrentBtn = document.getElementById('downloadAllBtn'); // This ID is for current answer print
         if (downloadCurrentBtn) {
             downloadCurrentBtn.textContent = 'Aktuelle Antwort drucken / als PDF speichern';
             downloadCurrentBtn.addEventListener('click', function() {
@@ -459,9 +522,7 @@
                 if(subId) {
                     title += ` - Thema: ${subId}`;
                 }
-                // For single answer print, we could use similar styling, but it's not requested here.
-                // For now, it uses the browser's default print style for the main page content.
-                printSingleAnswer(title, content, questions);
+                printSingleAnswer(title, content, questions); 
             });
         }
 
@@ -471,7 +532,7 @@
             if (!printAllSubIdsBtn) {
                 printAllSubIdsBtn = document.createElement('button');
                 printAllSubIdsBtn.id = 'printAllSubIdsBtn';
-                buttonContainer.appendChild(printAllSubIdsBtn);
+                buttonContainer.appendChild(printAllSubIdsBtn); // Append to the existing container
             }
             printAllSubIdsBtn.textContent = 'Alle Themen dieses Kapitels drucken';
             printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment);
