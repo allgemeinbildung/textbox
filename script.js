@@ -186,6 +186,7 @@
                         background-size: 100% ${lineHeight};
                         background-position: 0 0; /* Start lines from top-left of padding box */
                         background-repeat: repeat-y;
+                        min-height: calc(100vh - var(--content-offset, 0px))
                     }
 
                     /* Ensure common text elements inherit line-height and have transparent backgrounds */
@@ -248,6 +249,16 @@
         `);
         printWindow.document.close();
         setTimeout(() => {
+            const pageHeight = Math.max(printWindow.innerHeight, printWindow.document.documentElement.clientHeight);
+            const blocks = printWindow.document.querySelectorAll('.sub-assignment-block');
+            blocks.forEach(block => {
+                const lined = block.querySelector('.lined-content');
+                if (lined) {
+                    const rect = lined.getBoundingClientRect();
+                    const offset = rect.top % pageHeight;
+                    lined.style.setProperty('--content-offset', offset + 'px');
+                }
+            });
             printWindow.focus();
             printWindow.print();
         }, 500);
