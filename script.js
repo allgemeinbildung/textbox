@@ -179,7 +179,7 @@
             alert("Bitte erlauben Sie Pop-up-Fenster, um drucken zu können.");
             return;
         }
-        const lineHeight = '1.5em';
+        const lineHeight = '1.4em';
         const lineColor = '#d2d2d2';
         const numberOfLines = 22; // Fixed number of lines to display
 
