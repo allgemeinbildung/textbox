@@ -201,7 +201,7 @@
                     }
                     @page {
                         size: A4;
-                        margin: 2cm;
+                        margin: 1cm;
                     }
                     .lined-content {
                         background-color: #fdfdfa;
@@ -397,6 +397,7 @@
         });
 
         const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
+        // Add the main assignment title. This will be on the first page.
         let allContent = `<h2>Aufgabe: ${assignmentSuffix}</h2>`;
         let contentAdded = false;
 
@@ -406,7 +407,9 @@
 
             if (questionsHtml || answerContent) {
                 contentAdded = true;
-                const blockClass = index > 0 ? 'sub-assignment-block new-page' : 'sub-assignment-block';
+                // The first block (index 0) does not get 'new-page' and will appear on the first page with the H2.
+                // Subsequent blocks (index > 0) get 'new-page' to trigger 'page-break-before: always'.
+                const blockClass = 'sub-assignment-block' + (index > 0 ? ' new-page' : '');
                 allContent += `<div class="${blockClass}">`;
                 allContent += `<h3>Thema: ${subId}</h3>`;
 
@@ -414,21 +417,24 @@
                     allContent += questionsHtml;
                 }
 
+                // Ensure lined-content is always present for each block
                 if (answerContent) {
                     allContent += `<div class="lined-content">${answerContent}</div>`;
-                } else if (questionsHtml) {
+                } else { // If no answer content, provide the placeholder within the lined area
                     allContent += `<div class="lined-content"><p><em>Antworten:</em></p></div>`;
                 }
                 allContent += `</div>`;
-                if (index < sortedSubIds.length - 1) {
-                     allContent += `<hr>`;
-                }
+                // HORIZONTAL RULE LOGIC REMOVED
+                // if (index < sortedSubIds.length - 1) {
+                //      allContent += `<hr>`;
+                // }
             }
         });
         
-        if (allContent.endsWith('<hr>')) {
-            allContent = allContent.slice(0, -4);
-        }
+        // REMOVED THE LOGIC THAT SLICES THE LAST HR, AS HR IS NO LONGER ADDED
+        // if (allContent.endsWith('<hr>')) {
+        //     allContent = allContent.slice(0, -4);
+        // }
 
         if (!contentAdded) {
             alert("Obwohl Themen-IDs gefunden wurden, gab es keinen Inhalt (weder Fragen noch Antworten) zum Drucken.");
@@ -436,6 +442,7 @@
         }
         printFormattedContent(allContent, `Alle Themen für Kapitel ${assignmentSuffix}`);
     }
+
 
 
     function updateSubIdInfo() {
