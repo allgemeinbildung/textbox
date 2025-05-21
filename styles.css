@@ -252,6 +252,19 @@ button:hover {
 
 /* Druckstile */
 @media print {
+  .custom-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    color: #555;
+    font-size: 11px;
+    text-align: right;
+    padding-right: 1cm;
+    z-index: 100;
+  }
+  
     body * {
         visibility: hidden;
     }
