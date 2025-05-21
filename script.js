@@ -173,6 +173,9 @@
     }
 
 
+// The key change is in the printFormattedContent function
+// We need to modify how the lined background is implemented
+
     function printFormattedContent(content, printWindowTitle = 'Alle Antworten') {
         const printWindow = window.open('', '', 'height=800,width=800');
         if (!printWindow) {
@@ -181,6 +184,7 @@
         }
         const lineHeight = '1.6em';
         const lineColor = '#d2d2d2';
+        const numberOfLines = 20; // Fixed number of lines to display
 
         printWindow.document.write(`
             <!DOCTYPE html>
@@ -190,22 +194,53 @@
                 <title>${printWindowTitle}</title>
                 <style>
                     body {
-                        font-family: Arial, sans-serif; color: #333; line-height: ${lineHeight};
-                        padding: ${lineHeight}; margin: 0;
-                        -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+                        font-family: Arial, sans-serif; 
+                        color: #333; 
+                        line-height: ${lineHeight};
+                        padding: ${lineHeight}; 
+                        margin: 0;
+                        -webkit-print-color-adjust: exact !important; 
+                        print-color-adjust: exact !important;
+                    }
+                    @page {
+                        size: A4;
+                        margin: 2cm;
                     }
                     .lined-content {
                         background-color: #fdfdfa;
-                        background-image: linear-gradient(to bottom, transparent 0%, transparent calc(${lineHeight} - 1px), ${lineColor} calc(${lineHeight} - 1px), ${lineColor} ${lineHeight});
-                        background-size: 100% ${lineHeight}; background-position: 0 0; background-repeat: repeat-y;
-                        min-height: calc(100vh - var(--content-offset, 0px)); padding: 0.1px;
+                        position: relative;
+                        /* Set fixed height to accommodate 20 lines + small buffer */
+                        height: calc(${numberOfLines} * ${lineHeight} + 0.1px);
+                        padding: 0;
+                        overflow: visible;
+                        background-image: repeating-linear-gradient(
+                            to bottom,
+                            transparent 0px,
+                            transparent calc(${lineHeight} - 1px),
+                            ${lineColor} calc(${lineHeight} - 1px),
+                            ${lineColor} ${lineHeight}
+                        );
+                        background-size: 100% ${lineHeight};
+                        background-position: 0 0;
+                        background-repeat: repeat-y;
+                    }
+                    /* If the content is empty, add a placeholder message */
+                    .lined-content:empty::after {
+                        content: "Antworten:";
+                        font-style: italic;
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        padding: 0 5px;
                     }
                     h1, h2, h3, h4, h5, h6, p, li, div, blockquote, pre,
                     .questions-print, .questions-print ol, .questions-print li,
                     .sub-assignment-block, .sub-assignment-block > div,
                     .ql-editor, .ql-editor p, .ql-editor ol, .ql-editor ul, .ql-editor li {
-                        line-height: inherit; background-color: transparent !important;
-                        margin-top: 0; margin-bottom: 0;
+                        line-height: inherit; 
+                        background-color: transparent !important;
+                        margin-top: 0; 
+                        margin-bottom: 0;
                     }
                     h2 { color: #003f5c; margin-bottom: ${lineHeight}; }
                     h3 { color: #2f4b7c; margin-top: ${lineHeight}; margin-bottom: ${lineHeight}; page-break-after: avoid; }
@@ -221,29 +256,63 @@
                     .questions-print li {
                         margin-bottom: 0.25em; /* Optional: small space between questions if desired */
                     }
-                     li { margin-bottom: 0; } /* General list items */
+                    li { margin-bottom: 0; } /* General list items */
                     hr { border: 0; height: 1px; background-color: #999; margin: ${lineHeight} 0; }
                     .questions-print { margin-top: 0; margin-bottom: ${lineHeight}; }
-                    .sub-assignment-block { page-break-inside: avoid; margin-bottom: ${lineHeight}; padding-top: 0.1px; }
+                    .sub-assignment-block { 
+                        page-break-inside: avoid; 
+                        margin-bottom: ${lineHeight}; 
+                        padding-top: 0.1px; 
+                    }
                     .sub-assignment-block.new-page { page-break-before: always; margin-top: 0; }
                     strong { font-weight: bold; } em { font-style: italic; }
+                    
+                    /* For print, ensure each assignment starts on a new page */
+                    @media print {
+                        .sub-assignment-block {
+                            page-break-after: always;
+                        }
+                        /* The last block doesn't need a page break after it */
+                        .sub-assignment-block:last-child {
+                            page-break-after: auto;
+                        }
+                    }
                 </style>
             </head>
             <body>${content}</body>
             </html>
         `);
         printWindow.document.close();
-        setTimeout(() => {
-            const pageHeight = Math.max(printWindow.innerHeight, printWindow.document.documentElement.clientHeight);
-            const blocks = printWindow.document.querySelectorAll('.sub-assignment-block .lined-content');
-            blocks.forEach(lined => {
-                // const rect = lined.getBoundingClientRect(); // Simplified for now
-                // const offset = rect.top % pageHeight;
-                // lined.style.setProperty('--content-offset', offset + 'px');
+        
+        // After the document is loaded, ensure each lined-content area is properly filled
+        printWindow.onload = function() {
+            // Find all content blocks
+            const blocks = printWindow.document.querySelectorAll('.sub-assignment-block');
+            
+            blocks.forEach((block, index) => {
+                // Find the lined-content in this block
+                const lined = block.querySelector('.lined-content');
+                
+                if (lined) {
+                    // Ensure empty content blocks still show lines
+                    if (lined.innerHTML.trim() === '' || lined.innerHTML === '<p><br></p>') {
+                        lined.innerHTML = '<p><em>Antworten:</em></p>';
+                    }
+                    
+                    // Make sure content is properly positioned
+                    const contentElements = lined.querySelectorAll('p, div');
+                    contentElements.forEach(el => {
+                        el.style.position = 'relative';
+                        el.style.zIndex = '1';
+                    });
+                }
             });
-            printWindow.focus();
-            printWindow.print();
-        }, 500);
+            
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 500);
+        };
     }
 
     function getQuestionsFromStorage(assignmentId, subId) {
