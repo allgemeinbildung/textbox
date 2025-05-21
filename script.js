@@ -173,9 +173,6 @@
     }
 
 
-// The key change is in the printFormattedContent function
-// We need to modify how the lined background is implemented
-
     function printFormattedContent(content, printWindowTitle = 'Alle Antworten') {
         const printWindow = window.open('', '', 'height=800,width=800');
         if (!printWindow) {
@@ -209,10 +206,10 @@
                     .lined-content {
                         background-color: #fdfdfa;
                         position: relative;
-                        /* Set fixed height to accommodate 20 lines + small buffer */
-                        height: calc(${numberOfLines} * ${lineHeight} + 0.1px);
+                        /* Set exactly 20 lines height */
+                        height: calc(${numberOfLines} * ${lineHeight});
                         padding: 0;
-                        overflow: visible;
+                        overflow: hidden; /* Changed from visible to hidden to prevent content overflow */
                         background-image: repeating-linear-gradient(
                             to bottom,
                             transparent 0px,
@@ -223,6 +220,21 @@
                         background-size: 100% ${lineHeight};
                         background-position: 0 0;
                         background-repeat: repeat-y;
+                        /* Ensure no extra lines by limiting the background */
+                        background-repeat: repeat-y;
+                        background-image: repeating-linear-gradient(
+                            to bottom,
+                            transparent 0px,
+                            transparent calc(${lineHeight} - 1px),
+                            ${lineColor} calc(${lineHeight} - 1px),
+                            ${lineColor} ${lineHeight}
+                        ), linear-gradient(
+                            to bottom,
+                            transparent 0,
+                            transparent calc(${numberOfLines} * ${lineHeight}),
+                            #fdfdfa calc(${numberOfLines} * ${lineHeight}),
+                            #fdfdfa 100%
+                        );
                     }
                     /* If the content is empty, add a placeholder message */
                     .lined-content:empty::after {
@@ -305,6 +317,11 @@
                         el.style.position = 'relative';
                         el.style.zIndex = '1';
                     });
+
+                    // Ensure the content doesn't exceed the 20 lines
+                    // If the content is too large, it will be clipped due to overflow:hidden
+                    lined.style.height = `calc(${numberOfLines} * ${lineHeight})`;
+                    lined.style.maxHeight = `calc(${numberOfLines} * ${lineHeight})`;
                 }
             });
             
