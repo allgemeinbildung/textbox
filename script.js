@@ -179,9 +179,9 @@
             alert("Bitte erlauben Sie Pop-up-Fenster, um drucken zu können.");
             return;
         }
-        const lineHeight = '1.6em';
+        const lineHeight = '1.5em';
         const lineColor = '#d2d2d2';
-        const numberOfLines = 20; // Fixed number of lines to display
+        const numberOfLines = 22; // Fixed number of lines to display
 
         printWindow.document.write(`
             <!DOCTYPE html>
@@ -206,7 +206,7 @@
                     .lined-content {
                         background-color: #fdfdfa;
                         position: relative;
-                        /* Set exactly 20 lines height */
+                        /* Set exactly 15 lines height */
                         height: calc(${numberOfLines} * ${lineHeight});
                         padding: 0;
                         overflow: hidden; /* Changed from visible to hidden to prevent content overflow */
