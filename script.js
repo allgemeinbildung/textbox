@@ -451,7 +451,7 @@
 
         const { subId, questions } = getCurrentSubIdAndQuestions(); // questions is an object {question1: "...", ...}
         if (subId) {
-            let html = `<h4>Thema: ${subId}</h4>`;
+            let html = `<h4>${subId}</h4>`;
             if (Object.keys(questions).length > 0) {
                 html += '<div class="questions-container">';
                 html += '<ol>'; // Start ordered list
@@ -582,7 +582,7 @@
                 if (content === '<p><br></p>' || content === '') { alert("Kein Inhalt zum Drucken vorhanden."); return; }
                 const { subId, questions } = getCurrentSubIdAndQuestions();
                 let title = `Aufgabe: ${assignmentSuffix}`;
-                if(subId) { title += ` - Thema: ${subId}`; }
+                if(subId) { title += ` - ${subId}`; }
                 printSingleAnswer(title, content, questions); 
             });
         }
