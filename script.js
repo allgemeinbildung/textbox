@@ -411,7 +411,7 @@
                 // Subsequent blocks (index > 0) get 'new-page' to trigger 'page-break-before: always'.
                 const blockClass = 'sub-assignment-block' + (index > 0 ? ' new-page' : '');
                 allContent += `<div class="${blockClass}">`;
-                allContent += `<h3>Thema: ${subId}</h3>`;
+                allContent += `<h3>${subId}</h3>`;
 
                 if (questionsHtml) {
                     allContent += questionsHtml;
