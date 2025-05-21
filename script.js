@@ -440,7 +440,7 @@
             alert("Obwohl Themen-IDs gefunden wurden, gab es keinen Inhalt (weder Fragen noch Antworten) zum Drucken.");
             return;
         }
-        printFormattedContent(allContent, `Alle Themen für Kapitel ${assignmentSuffix}`);
+        printFormattedContent(allContent, `${assignmentSuffix}`);
     }
 
 
