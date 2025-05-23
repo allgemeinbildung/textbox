@@ -127,7 +127,7 @@
         printDiv.id = 'printSingleContent';
         printDiv.style.visibility = 'hidden';
         const titleElement = document.createElement('h2');
-        titleElement.textContent = title;
+        titleElement.textContent = title; // Title is already modified before calling this function
         printDiv.appendChild(titleElement);
 
         if (Object.keys(questions).length > 0) {
@@ -398,7 +398,7 @@
 
         const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
         // Add the main assignment title. This will be on the first page.
-        let allContent = `<h2>Aufgabe: ${assignmentSuffix}</h2>`;
+        let allContent = `<h2>${assignmentSuffix}</h2>`; // MODIFIED: Removed "Aufgabe: "
         let contentAdded = false;
 
         sortedSubIds.forEach((subId, index) => {
@@ -411,7 +411,7 @@
                 // Subsequent blocks (index > 0) get 'new-page' to trigger 'page-break-before: always'.
                 const blockClass = 'sub-assignment-block' + (index > 0 ? ' new-page' : '');
                 allContent += `<div class="${blockClass}">`;
-                allContent += `<h3>${subId}</h3>`;
+                allContent += `<h3>Thema: ${subId}</h3>`; // MODIFIED: Added "Thema: "
 
                 if (questionsHtml) {
                     allContent += questionsHtml;
@@ -424,18 +424,9 @@
                     allContent += `<div class="lined-content"><p><em>Antworten:</em></p></div>`;
                 }
                 allContent += `</div>`;
-                // HORIZONTAL RULE LOGIC REMOVED
-                // if (index < sortedSubIds.length - 1) {
-                //      allContent += `<hr>`;
-                // }
             }
         });
         
-        // REMOVED THE LOGIC THAT SLICES THE LAST HR, AS HR IS NO LONGER ADDED
-        // if (allContent.endsWith('<hr>')) {
-        //     allContent = allContent.slice(0, -4);
-        // }
-
         if (!contentAdded) {
             alert("Obwohl Themen-IDs gefunden wurden, gab es keinen Inhalt (weder Fragen noch Antworten) zum Drucken.");
             return;
@@ -510,7 +501,7 @@
         
         const assignmentInfo = document.getElementById('assignmentInfo'); 
         if (assignmentInfo) {
-            assignmentInfo.textContent = assignmentSuffix ? `Aufgabe: ${assignmentSuffix}` : 'Kapitel';
+            assignmentInfo.textContent = assignmentSuffix ? `${assignmentSuffix}` : 'Kapitel'; // MODIFIED: Removed "Aufgabe: "
         }
 
         const answerBox = document.getElementById('answerBox');
@@ -573,19 +564,20 @@
             saveQuestionsToLocal(assignmentId, currentSubId, currentQuestions);
         }
 
-        const downloadCurrentBtn = document.getElementById('downloadAllBtn');
-        if (downloadCurrentBtn) {
-            downloadCurrentBtn.textContent = 'Aktuelle Antwort drucken / als PDF speichern';
-            downloadCurrentBtn.addEventListener('click', function() {
-                if (!quill) { alert("Editor nicht initialisiert."); return; }
-                const content = quill.root.innerHTML;
-                if (content === '<p><br></p>' || content === '') { alert("Kein Inhalt zum Drucken vorhanden."); return; }
-                const { subId, questions } = getCurrentSubIdAndQuestions();
-                let title = `Aufgabe: ${assignmentSuffix}`;
-                if(subId) { title += ` - ${subId}`; }
-                printSingleAnswer(title, content, questions); 
-            });
-        }
+        // MODIFIED: Removed the 'downloadAllBtn' (Aktuelle Antwort drucken) and its event listener
+        // const downloadCurrentBtn = document.getElementById('downloadAllBtn');
+        // if (downloadCurrentBtn) {
+        //     downloadCurrentBtn.textContent = 'Aktuelle Antwort drucken / als PDF speichern';
+        //     downloadCurrentBtn.addEventListener('click', function() {
+        //         if (!quill) { alert("Editor nicht initialisiert."); return; }
+        //         const content = quill.root.innerHTML;
+        //         if (content === '<p><br></p>' || content === '') { alert("Kein Inhalt zum Drucken vorhanden."); return; }
+        //         const { subId, questions } = getCurrentSubIdAndQuestions();
+        //         let title = `${assignmentSuffix}`; // MODIFIED: Removed "Aufgabe: "
+        //         if(subId) { title += ` - Thema: ${subId}`; } // MODIFIED: Added "Thema: "
+        //         printSingleAnswer(title, content, questions); 
+        //     });
+        // }
 
         const buttonContainer = document.querySelector('.button-container');
         if (buttonContainer) {

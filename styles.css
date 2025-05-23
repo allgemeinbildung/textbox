@@ -29,15 +29,15 @@ body {
     /* height: 250px; */ /* REMOVED - Height will be dynamic */
     margin-bottom: 10px;
     background-color: var(--editor-background); /* This applies to the outer container */
-    border: 1px solid var(--border-color);      /* This applies to the outer container */
-    border-radius: 4px;                         /* This applies to the outer container */
+    border: 1px solid var(--border-color);       /* This applies to the outer container */
+    border-radius: 4px;                          /* This applies to the outer container */
     /* Quill's .ql-toolbar and .ql-container will be rendered inside this #answerBox */
 }
 
 /* Added/Modified for dynamic height */
 #answerBox .ql-editor {
     min-height: 22px; /* Approximate height for one line of text content (e.g. 16px font-size * 1.4 line-height) */
-                      /* Quill's default Snow theme padding (12px top/bottom) will make the visual min-height ~46px */
+                          /* Quill's default Snow theme padding (12px top/bottom) will make the visual min-height ~46px */
     box-sizing: border-box;
     /* height and overflow-y will be managed by JavaScript */
 }
@@ -73,12 +73,7 @@ button:hover {
     background-color: #2f4b7c; 
 }
 
-#downloadAllBtn {
-    background-color: #555555; 
-}
-#downloadAllBtn:hover {
-    background-color: #777777; 
-}
+/* #downloadAllBtn style removed as the button is removed */
 
 #clearAllBtn {
     background-color: #d62728; 
@@ -252,19 +247,7 @@ button:hover {
 
 /* Druckstile */
 @media print {
-  .custom-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    color: #555;
-    font-size: 11px;
-    text-align: right;
-    padding-right: 1cm;
-    z-index: 100;
-    visibility: visible !important;
-  }
+  /* .custom-footer removed */
   
     body * {
         visibility: hidden;
