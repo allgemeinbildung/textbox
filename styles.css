@@ -367,7 +367,7 @@ summary::after {
   /* 1. This sets the 'usual space between the lines of the single questions'
      if a question is long and wraps to multiple lines.
      'normal' is often around 1.2-1.4. A value of 1.4 is common for readability. */
-  line-height: 1.4; /* Adjust as needed for comfortable reading WITHIN a question. */
+  line-height: 1.2; /* Adjust as needed for comfortable reading WITHIN a question. */
 
   /* 2. This adds the 'minimal space BETWEEN the questions'.
      This margin is added AFTER each entire question (<li>).
