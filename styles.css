@@ -373,7 +373,7 @@ summary::after {
      This margin is added AFTER each entire question (<li>).
      It makes the gap between "Question 1" and "Question 2" visibly (but minimally)
      larger than the gap between line 1 and line 2 of a wrapped "Question 1". */
-  margin-bottom: 0.3em; /* Try values like 0.2em, 0.3em, or 0.4em.
+  margin-bottom: 0.4em; /* Try values like 0.2em, 0.3em, or 0.4em.
                            This is the *extra* spacing that distinguishes
                            one question item from the next. */
 }
