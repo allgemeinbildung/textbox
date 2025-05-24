@@ -363,6 +363,10 @@ summary::after {
     margin-bottom: 15px;
 }
 
+.questions-container ol li {
+  margin-bottom: 0.1em; /* Adjust this value for more or less space */
+}
+
 .questions-container div {
     margin-bottom: 5px;
 }
