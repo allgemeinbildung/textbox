@@ -587,7 +587,7 @@
                 printAllSubIdsBtn.id = 'printAllSubIdsBtn';
                 buttonContainer.appendChild(printAllSubIdsBtn);
             }
-            printAllSubIdsBtn.textContent = 'Alle Themen dieses Kapitels drucken';
+            printAllSubIdsBtn.textContent = 'Alle Inhalte drucken / Als PDF speichern';
             printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment);
         }
         
