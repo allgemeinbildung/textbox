@@ -1,4 +1,4 @@
-// popup.js
+// popup.js (Updated with debug info)
 
 document.addEventListener('DOMContentLoaded', () => {
     const dataContainer = document.getElementById('dataContainer');
@@ -31,9 +31,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (filteredKeys.length === 0) {
-            dataContainer.innerHTML = '<p class="no-data">Keine gespeicherten Daten gefunden.</p>';
+            // Show debug info when no data is found
+            dataContainer.innerHTML = `
+                <div class="no-data">
+                    <p>Keine gespeicherten Daten gefunden.</p>
+                    <p style="font-size: 11px; color: #666; margin-top: 10px;">
+                        Debug: ${Object.keys(allData).length} Einträge insgesamt<br>
+                        Schlüssel: ${Object.keys(allData).join(', ') || 'keine'}
+                    </p>
+                </div>
+            `;
             return;
         }
+
+        // Add debug info at the top
+        const debugDiv = document.createElement('div');
+        debugDiv.style.cssText = 'background: #e3f2fd; padding: 8px; margin-bottom: 10px; border-radius: 4px; font-size: 11px; color: #1565c0;';
+        debugDiv.innerHTML = `
+            <strong>Debug Info:</strong><br>
+            Gesamt: ${Object.keys(allData).length} Einträge | 
+            Angezeigt: ${filteredKeys.length} Einträge | 
+            Filter: ${filter}
+        `;
+        dataContainer.appendChild(debugDiv);
 
         filteredKeys.sort().forEach(key => {
             const [assignmentId, subId] = key.split('|');
@@ -52,16 +72,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h2 class="entry-title">${subId} (${assignmentId})</h2>
                     <button class="delete-btn" data-key="${key}">Löschen</button>
                 </div>
-                <div class="entry-content">${textPreview.substring(0, 200)}...</div>
+                <div class="entry-content">${textPreview.substring(0, 200)}${textPreview.length > 200 ? '...' : ''}</div>
+                <div style="font-size: 10px; color: #999; margin-top: 5px;">
+                    Schlüssel: ${key} | Länge: ${content.length} Zeichen
+                </div>
             `;
             dataContainer.appendChild(entryDiv);
         });
     }
     
     // Load all data from storage initially
+    console.log('[Popup] Loading all data...');
     chrome.runtime.sendMessage({ action: "getAllData" }, (items) => {
+        if (chrome.runtime.lastError) {
+            console.error('[Popup] Error loading data:', chrome.runtime.lastError);
+            dataContainer.innerHTML = `
+                <div class="no-data">
+                    <p>Fehler beim Laden der Daten:</p>
+                    <p style="color: red; font-size: 12px;">${chrome.runtime.lastError.message}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        console.log('[Popup] Loaded data:', items);
         allData = items;
         renderData();
+    });
+
+    // Also get storage info for debugging
+    chrome.runtime.sendMessage({ action: "getStorageInfo" }, (info) => {
+        if (!chrome.runtime.lastError && info) {
+            console.log('[Popup] Storage info:', info);
+        }
     });
 
     // Event Listeners
@@ -72,11 +115,18 @@ document.addEventListener('DOMContentLoaded', () => {
     dataContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('delete-btn')) {
             const key = e.target.dataset.key;
-            if (confirm(`Möchten Sie den Eintrag für "${key.split('|')[1]}" wirklich löschen?`)) {
+            const [assignmentId, subId] = key.split('|');
+            if (confirm(`Möchten Sie den Eintrag für "${subId}" (${assignmentId}) wirklich löschen?`)) {
                 chrome.runtime.sendMessage({ action: "deleteData", key: key }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        alert('Fehler beim Löschen: ' + chrome.runtime.lastError.message);
+                        return;
+                    }
                     if(response.status === 'success') {
                         delete allData[key];
                         renderData(assignmentFilter.value);
+                    } else {
+                        alert('Fehler beim Löschen: ' + (response.error || 'Unbekannter Fehler'));
                     }
                 });
             }
@@ -86,9 +136,15 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteAllBtn.addEventListener('click', () => {
         if (confirm("Möchten Sie wirklich ALLE gespeicherten Daten unwiderruflich löschen?")) {
             chrome.runtime.sendMessage({ action: "deleteAllData" }, (response) => {
+                if (chrome.runtime.lastError) {
+                    alert('Fehler beim Löschen aller Daten: ' + chrome.runtime.lastError.message);
+                    return;
+                }
                 if (response.status === 'success') {
                     allData = {};
                     renderData();
+                } else {
+                    alert('Fehler beim Löschen aller Daten: ' + (response.error || 'Unbekannter Fehler'));
                 }
             });
         }
@@ -99,12 +155,39 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Es gibt keine Daten zum Exportieren.");
             return;
         }
-        const jsonData = JSON.stringify(allData, null, 2);
+        
+        // Create more readable export format
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            dataCount: Object.keys(allData).length,
+            data: {}
+        };
+
+        // Organize data by assignment
+        Object.keys(allData).forEach(key => {
+            const [assignmentId, subId] = key.split('|');
+            if (!exportData.data[assignmentId]) {
+                exportData.data[assignmentId] = {};
+            }
+            exportData.data[assignmentId][subId] = allData[key];
+        });
+
+        const jsonData = JSON.stringify(exportData, null, 2);
         const blob = new Blob([jsonData], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
+        
+        const now = new Date();
+        const timestamp = now.toISOString().slice(0, 19).replace(/[T:]/g, '-');
+        
         chrome.downloads.download({
             url: url,
-            filename: 'allgemeinbildung-export.json'
+            filename: `allgemeinbildung-export-${timestamp}.json`
+        }, (downloadId) => {
+            if (chrome.runtime.lastError) {
+                alert('Fehler beim Download: ' + chrome.runtime.lastError.message);
+            } else {
+                console.log('Export started with download ID:', downloadId);
+            }
         });
     });
 });
