@@ -1,7 +1,15 @@
-// script.js
+// script.js - Rewritten with IIFE for Scope Isolation
+
 (function() {
-    'use strict';
-    let quill;
+    'use strict'; // Optional: Enforces stricter parsing and error handling
+
+    // Constants for storage keys (now local to this IIFE)
+    const STORAGE_PREFIX = 'textbox-assignment_';
+    const SUB_STORAGE_PREFIX = 'textbox-sub_';
+    const QUESTIONS_PREFIX = 'textbox-questions_'; // New prefix for storing questions
+
+    // Global variable for the Quill editor (now local to this IIFE)
+    let quill;
 
     function parseMarkdown(text) {
         if (!text) return '';
