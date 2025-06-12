@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Allgemeinbildung Permanent Storage",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Saves Quill editor content permanently and allows filtering and exporting.",
   "permissions": [
-    "storage",      
+    "storage",
     "scripting",
     "downloads"
   ],
