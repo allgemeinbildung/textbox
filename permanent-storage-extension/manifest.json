@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Permanentspeicher für Allgemeinbildung",
+  "version": "1.0",
+  "description": "Speichert Antworten aus dem Textbox-Tool permanent und synchronisiert sie.",
+  "permissions": ["storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://allgemeinbildung.github.io/textbox/answers.html*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png"
+  }
+}

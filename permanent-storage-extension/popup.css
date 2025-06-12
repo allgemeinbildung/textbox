@@ -1,0 +1,8 @@
+body { font-family: Arial, sans-serif; width: 450px; padding: 10px; }
+.header { margin-bottom: 15px; }
+h1 { font-size: 16px; margin: 0 0 10px 0; }
+select { width: 100%; padding: 8px; font-size: 14px; }
+.placeholder { color: #888; font-style: italic; }
+.sub-assignment { border: 1px solid #ccc; border-radius: 4px; padding: 10px; margin-bottom: 10px; }
+.sub-assignment h3 { margin: 0 0 5px 0; font-size: 14px; color: #003f5c; }
+.sub-assignment .content { font-size: 12px; max-height: 150px; overflow-y: auto; background: #f9f9f9; padding: 5px; border: 1px solid #eee; }
