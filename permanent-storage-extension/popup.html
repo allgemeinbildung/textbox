@@ -1,19 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
+    <meta charset="UTF-8">
     <title>Gespeicherte Antworten</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
     <div class="header">
         <h1>Gespeicherte Antworten</h1>
-        <select id="assignmentFilter">
-            <option value="">Kapitel wählen...</option>
-        </select>
+        <div class="controls">
+            <select id="assignmentFilter">
+                <option value="all">Alle Kapitel anzeigen</option>
+            </select>
+        </div>
     </div>
-    <div id="resultsContainer">
-        <p class="placeholder">Wählen Sie ein Kapitel, um die Antworten anzuzeigen.</p>
+    
+    <div id="dataContainer">
+        <p class="loading">Lade Daten...</p>
     </div>
+
+    <div class="footer">
+        <button id="exportBtn">Daten als JSON exportieren</button>
+        <button id="deleteAllBtn">Alle Daten löschen</button>
+    </div>
+
     <script src="popup.js"></script>
 </body>
 </html>

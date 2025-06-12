@@ -1,27 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "Permanentspeicher für Allgemeinbildung",
+  "name": "Allgemeinbildung Permanent Storage",
   "version": "1.0",
-  "description": "Speichert Antworten aus dem Textbox-Tool permanent und synchronisiert sie.",
-  "permissions": ["storage"],
+  "description": "Saves Quill editor content permanently and allows filtering and exporting.",
+  "permissions": [
+    "storage",      
+    "scripting",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://allgemeinbildung.github.io/textbox/answers.html"
+  ],
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["https://allgemeinbildung.github.io/textbox/answers.html*"],
-      "js": ["content.js"]
-    }
-  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
-      "48": "icons/icon48.png"
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
   },
   "icons": {
     "16": "icons/icon16.png",
-    "48": "icons/icon48.png"
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }

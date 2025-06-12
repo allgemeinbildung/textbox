@@ -1,36 +1,48 @@
-// background.js: Handles all data storage logic.
+// background.js
 
-// Listens for messages from the content script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'SAVE_DATA') {
-        const { assignmentId, subId, content } = message.payload;
-        if (!assignmentId || !subId) return;
-
-        // Use chrome.storage.sync to save data
-        chrome.storage.sync.get([assignmentId], (result) => {
-            const assignmentData = result[assignmentId] || {};
-            assignmentData[subId] = { content, timestamp: new Date().toISOString() };
-            chrome.storage.sync.set({ [assignmentId]: assignmentData }, () => {
-                console.log(`Data saved for ${assignmentId}`);
+// Listens for messages from content scripts or the popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    switch (request.action) {
+        case "saveData":
+            // The key is a combination of assignmentId and subId
+            chrome.storage.local.set({ [request.key]: request.content }, () => {
+                console.log(`Data saved for key: ${request.key}`);
+                sendResponse({ status: "success" });
             });
-        });
-    }
+            return true; // Indicates that the response is sent asynchronously
 
-    if (message.type === 'GET_SAVED_DATA') {
-        const { assignmentId, subId } = message.payload;
-        if (!assignmentId || !subId) {
-            sendResponse(null);
+        case "loadData":
+            chrome.storage.local.get(request.key, (result) => {
+                sendResponse(result);
+            });
+            return true; // Indicates that the response is sent asynchronously
+
+        case "getAllData":
+            chrome.storage.local.get(null, (items) => {
+                sendResponse(items);
+            });
             return true;
-        }
 
-        // Get data from chrome.storage.sync
-        chrome.storage.sync.get([assignmentId], (result) => {
-            if (result[assignmentId] && result[assignmentId][subId]) {
-                sendResponse({ content: result[assignmentId][subId].content });
-            } else {
-                sendResponse(null); // No data found
-            }
+        case "deleteData":
+            chrome.storage.local.remove(request.key, () => {
+                 sendResponse({ status: "success", key: request.key });
+            });
+            return true;
+        
+        case "deleteAllData":
+            chrome.storage.local.clear(() => {
+                sendResponse({ status: "success" });
+            });
+            return true;
+    }
+});
+
+// Injects the content script when the target page is loaded
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete' && tab.url && tab.url.startsWith('https://allgemeinbildung.github.io/textbox/answers.html')) {
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content.js']
         });
-        return true; // Required for asynchronous sendResponse
     }
 });
