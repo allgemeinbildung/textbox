@@ -1,4 +1,4 @@
-// script.js - Rewritten with IIFE and Extension-Aware Logic
+// script.js - v3 (Corrected Extension-Aware Logic)
 
 (function() {
     'use strict';
@@ -7,6 +7,7 @@
     const STORAGE_PREFIX = 'textbox-assignment_';
     const SUB_STORAGE_PREFIX = 'textbox-sub_';
     const QUESTIONS_PREFIX = 'textbox-questions_';
+    // The content.js script from the extension adds this attribute to the <html> tag.
     const isExtensionInstalled = document.documentElement.hasAttribute('data-extension-installed');
 
     console.log(`Page Initializing. Extension detected: ${isExtensionInstalled}`);
@@ -15,7 +16,16 @@
     let quill;
 
     // --- UTILITY FUNCTIONS ---
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
     const getQueryParams = () => new URLSearchParams(window.location.search);
+
     const parseMarkdown = (text) => {
         if (!text) return '';
         text = text.replace(/(\*\*|__)(?=\S)(.*?)(?<=\S)\1/g, '<strong>$2</strong>');
@@ -40,7 +50,7 @@
 
         const params = getQueryParams();
         const assignmentId = params.get('assignmentId');
-        const subId = params.get('subIds'); // Handles one subId from URL
+        const subId = params.get('subIds');
         if (!assignmentId || !subId) return;
 
         // The key format is different for the extension vs localStorage
@@ -58,13 +68,7 @@
         }
         showSaveIndicator();
     }
-    const debouncedSave = (func, wait) => {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
-        };
-    }(saveContent, 1500);
+    const debouncedSave = debounce(saveContent, 1500);
 
     // --- DATA LOADING (EXTENSION or LOCALSTORAGE) ---
     function loadContent() {
@@ -77,7 +81,6 @@
             const extensionKey = `${assignmentId}|${subId}`;
             console.log(`Requesting data from Extension for key: ${extensionKey}`);
 
-            // One-time listener for the response from the content script
             window.addEventListener('ab-load-response', (e) => {
                 if (e.detail.key === extensionKey && e.detail.content) {
                     console.log('Extension data received, loading into Quill.');
@@ -87,7 +90,6 @@
                 }
             }, { once: true });
 
-            // Dispatch the event to request the data
             window.dispatchEvent(new CustomEvent('ab-load-request', {
                 detail: { key: extensionKey }
             }));
@@ -110,19 +112,32 @@
             const subIdSet = new Set();
             const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
 
-            // Populate map with answers
-            for (const key in data) {
-                const [keyAssignmentId, subId] = key.split('|');
-                if (keyAssignmentId === assignmentId) {
-                    subIdAnswerMap.set(subId, data[key]);
-                    subIdSet.add(subId);
+            // In localStorage mode, data is flat. In extension mode, it's structured.
+            if (!isExtensionInstalled) {
+                 // For localStorage, data is the whole localStorage object.
+                 const answerPrefix = `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
+                 for (let i = 0; i < data.length; i++) {
+                     const key = data.key(i);
+                     if (key && key.startsWith(answerPrefix)) {
+                         const subId = key.substring(answerPrefix.length);
+                         subIdAnswerMap.set(subId, data.getItem(key));
+                         subIdSet.add(subId);
+                     }
+                 }
+            } else {
+                 // For extension, data is an object of { key: content }
+                 for (const key in data) {
+                    const [keyAssignmentId, subId] = key.split('|');
+                    if (keyAssignmentId === assignmentId) {
+                        subIdAnswerMap.set(subId, data[key]);
+                        subIdSet.add(subId);
+                    }
                 }
             }
 
-            // Also find subIds that only have questions (from localStorage)
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key.startsWith(`${QUESTIONS_PREFIX}${assignmentId}`)) {
+                if (key && key.startsWith(`${QUESTIONS_PREFIX}${assignmentId}`)) {
                     const subId = key.substring(key.indexOf(SUB_STORAGE_PREFIX) + SUB_STORAGE_PREFIX.length);
                     subIdSet.add(subId);
                 }
@@ -156,23 +171,12 @@
             console.log("Requesting all data from extension for printing.");
             window.addEventListener('ab-get-all-response', (e) => {
                 console.log("Received all data from extension.", e.detail.allData);
-                processAndPrint(e.detail.allData);
+                processAndPrint(e.detail.allData || {});
             }, { once: true });
             window.dispatchEvent(new CustomEvent('ab-get-all-request'));
         } else {
             console.log("Gathering data from localStorage for printing.");
-            const localStorageData = {};
-            const answerPrefix = `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith(answerPrefix)) {
-                    const subId = key.substring(answerPrefix.length);
-                    // Format it like the extension data for processAndPrint function
-                    const extensionLikeKey = `${assignmentId}|${subId}`;
-                    localStorageData[extensionLikeKey] = localStorage.getItem(key);
-                }
-            }
-            processAndPrint(localStorageData);
+            processAndPrint(localStorage);
         }
     }
 
@@ -181,7 +185,7 @@
         const params = getQueryParams();
         const assignmentId = params.get('assignmentId');
         const subId = params.get('subIds');
-        if (!assignmentId || !subId) return;
+        if (!assignmentId || !subId) return { subId: null, questions: {} };
 
         const questions = {};
         params.forEach((value, key) => {
@@ -220,70 +224,13 @@
             });
             html += '</ol></div>';
             return html;
-        } catch (e) {
-            return '';
-        }
+        } catch (e) { return ''; }
     }
 
-
-    // --- PAGE INITIALIZATION ---
-    document.addEventListener("DOMContentLoaded", function() {
-        // Initialize Quill Editor
-        quill = new Quill('#answerBox', {
-            theme: 'snow',
-            placeholder: 'Gib hier deinen Text ein...',
-            modules: {
-                toolbar: [
-                    ['bold', 'italic', 'underline'],
-                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                    ['clean']
-                ]
-            }
-        });
-        quill.on('text-change', (delta, oldDelta, source) => {
-            if (source === 'user') {
-                debouncedSave();
-            }
-        });
-
-        // Display current assignment/question info
-        const { subId, questions } = getQuestionsFromUrlAndSave();
-        const subIdInfoElement = document.getElementById('subIdInfo');
-        if (subId) {
-            let infoHtml = `<h4>${subId}</h4>`;
-            const sortedQuestionKeys = Object.keys(questions).sort((a, b) => {
-                const numA = parseInt(a.replace('question', ''), 10);
-                const numB = parseInt(b.replace('question', ''), 10);
-                return numA - numB;
-            });
-            if (sortedQuestionKeys.length > 0) {
-                infoHtml += '<div class="questions-container"><ol>';
-                sortedQuestionKeys.forEach(key => {
-                    infoHtml += `<li>${parseMarkdown(questions[key])}</li>`;
-                });
-                infoHtml += '</ol></div>';
-            }
-            subIdInfoElement.innerHTML = infoHtml;
-        }
-
-        // Load existing content into editor
-        loadContent();
-
-        // Setup Print Button
-        const printAllSubIdsBtn = document.createElement('button');
-        printAllSubIdsBtn.id = 'printAllSubIdsBtn';
-        printAllSubIdsBtn.textContent = 'Alle Inhalte drucken / Als PDF speichern';
-        printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment);
-        document.querySelector('.button-container').appendChild(printAllSubIdsBtn);
-    });
-
-    // Make the print function globally accessible for the popup window
-    // Note: The original printFormattedContent function is assumed to be defined outside this IIFE or is not needed for this solution.
-    // If it was inside, it needs to be attached to window.
-    // Based on the original file, printFormattedContent is defined outside the IIFE, so this will work. Let's ensure it is.
-    // For safety, let's define it here.
-    window.printFormattedContent = function(content, printWindowTitle = 'Alle Antworten') {
-         const printWindow = window.open('', '', 'height=800,width=800');
+    // --- Print Window Function ---
+    // Moved out of the old IIFE to be globally accessible by the print logic.
+    function printFormattedContent(content, printWindowTitle = 'Alle Antworten') {
+        const printWindow = window.open('', '', 'height=800,width=800');
         if (!printWindow) {
             alert("Bitte erlauben Sie Pop-up-Fenster, um drucken zu können.");
             return;
@@ -314,6 +261,47 @@
                 printWindow.print();
             }, 500);
         };
-    };
+    }
+
+    // --- PAGE INITIALIZATION ---
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Initialize Quill Editor
+        quill = new Quill('#answerBox', {
+            theme: 'snow',
+            placeholder: 'Gib hier deinen Text ein...',
+            modules: { toolbar: [ ['bold', 'italic', 'underline'], [{ 'list': 'ordered' }, { 'list': 'bullet' }], ['clean'] ] }
+        });
+        quill.on('text-change', (delta, oldDelta, source) => {
+            if (source === 'user') { debouncedSave(); }
+        });
+
+        // 2. Display current assignment/question info
+        const { subId, questions } = getQuestionsFromUrlAndSave();
+        const subIdInfoElement = document.getElementById('subIdInfo');
+        if (subId) {
+            let infoHtml = `<h4>${subId}</h4>`;
+            const sortedQuestionKeys = Object.keys(questions).sort((a, b) => {
+                const numA = parseInt(a.replace('question', ''), 10);
+                const numB = parseInt(b.replace('question', ''), 10);
+                return numA - numB;
+            });
+            if (sortedQuestionKeys.length > 0) {
+                infoHtml += '<div class="questions-container"><ol>';
+                sortedQuestionKeys.forEach(key => { infoHtml += `<li>${parseMarkdown(questions[key])}</li>`; });
+                infoHtml += '</ol></div>';
+            }
+            subIdInfoElement.innerHTML = infoHtml;
+        }
+
+        // 3. Load existing content into editor (works for both modes)
+        loadContent();
+
+        // 4. Setup Print Button
+        const printAllSubIdsBtn = document.createElement('button');
+        printAllSubIdsBtn.id = 'printAllSubIdsBtn';
+        printAllSubIdsBtn.textContent = 'Alle Inhalte drucken / Als PDF speichern';
+        printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment);
+        document.querySelector('.button-container').appendChild(printAllSubIdsBtn);
+    });
 
 })();
