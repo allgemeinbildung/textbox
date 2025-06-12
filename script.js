@@ -11,102 +11,97 @@
     // Global variable for the Quill editor (now local to this IIFE)
     let quill;
 
-    function parseMarkdown(text) {
-        if (!text) return '';
-        text = text.replace(/(\*\*|__)(?=\S)(.*?)(?<=\S)\1/g, '<strong>$2</strong>');
-        text = text.replace(/(\*|_)(?=\S)(.*?)(?<=\S)\1/g, '<em>$2</em>');
-        return text;
-    }
+    // Markdown parsing function (now local to this IIFE)
+    function parseMarkdown(text) {
+        if (!text) return '';
+        // Bold: **text** or __text__
+        text = text.replace(/(\*\*|__)(?=\S)(.*?)(?<=\S)\1/g, '<strong>$2</strong>');
+        // Italic: *text* or _text_
+        text = text.replace(/(\*|_)(?=\S)(.*?)(?<=\S)\1/g, '<em>$2</em>');
+        return text;
+    }
 
-    function getQueryParams() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const params = {};
-        for (const [key, value] of urlParams.entries()) {
-            if (key === 'subIds' || key.startsWith('question')) {
-                if (!params[key]) params[key] = [];
-                params[key].push(value);
-            } else {
-                params[key] = value;
-            }
-        }
-        return params;
-    }
+    // Utility functions for URL parameters (now local to this IIFE)
+    function getQueryParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const params = {};
+        for (const [key, value] of urlParams.entries()) {
+            if (key === 'subIds' || key.startsWith('question')) {
+                if (!params[key]) {
+                    params[key] = [];
+                }
+                params[key].push(value);
+            } else {
+                params[key] = value;
+            }
+        }
+        return params;
+    }
 
-    function getQueryParam(param) { return getQueryParams()[param]; }
+    function getQueryParam(param) {
+        return getQueryParams()[param];
+    }
 
-    function getCurrentSubIdAndQuestions() {
-        const params = getQueryParams();
-        const subId = params.subIds ? params.subIds[0] : null;
-        const questions = {};
-        const questionKeys = Object.keys(params)
-            .filter(key => key.startsWith('question') && params[key])
-            .sort((a, b) => parseInt(a.replace('question', ''), 10) - parseInt(b.replace('question', ''), 10));
-        questionKeys.forEach(key => { questions[key] = params[key][0]; });
-        return { subId, questions };
-    }
+    function getCurrentSubIdAndQuestions() {
+        const params = getQueryParams();
+        const subId = params.subIds ? params.subIds[0] : null;
+        const questions = {};
+        // Collect questions in order
+        const questionKeys = Object.keys(params)
+            .filter(key => key.startsWith('question') && params[key])
+            .sort((a, b) => {
+                const numA = parseInt(a.replace('question', ''), 10);
+                const numB = parseInt(b.replace('question', ''), 10);
+                return numA - numB;
+            });
 
-    function showSaveIndicator() {
-        const saveIndicator = document.getElementById('saveIndicator');
-        if (!saveIndicator) return;
-        saveIndicator.style.opacity = '1';
-        setTimeout(() => { saveIndicator.style.opacity = '0'; }, 2000);
-    }
+        questionKeys.forEach(key => {
+            questions[key] = params[key][0];
+        });
+        return { subId, questions };
+    }
 
-    // MODIFIED: This function now dispatches an event instead of using localStorage
-    function saveDataToExtension() {
-        if (!quill) return;
-        const htmlContent = quill.root.innerHTML;
-        if (htmlContent === '<p><br></p>' || htmlContent === '') {
-            return;
-        }
-        const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
-        const { subId } = getCurrentSubIdAndQuestions();
+    function showSaveIndicator() {
+        const saveIndicator = document.getElementById('saveIndicator');
+        if (!saveIndicator) return;
+        saveIndicator.style.opacity = '1';
+        setTimeout(() => {
+            saveIndicator.style.opacity = '0';
+        }, 2000);
+    }
 
-        window.dispatchEvent(new CustomEvent('saveDataToExtension', {
-            detail: { assignmentId, subId, content: htmlContent }
-        }));
-        showSaveIndicator();
-    }
+    function saveQuestionsToLocal(assignmentId, subId, questions) {
+        if (!subId || Object.keys(questions).length === 0) return;
+        const storageKey = `${QUESTIONS_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`;
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(questions));
+            console.log(`Questions for ${storageKey} saved`);
+        } catch (e) {
+            console.error("Error saving questions to localStorage:", e);
+        }
+    }
 
-    const debouncedSave = debounce(saveDataToExtension, 1500);
-
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
-        };
-    }
-
-    document.addEventListener("DOMContentLoaded", function() {
-        const answerBox = document.getElementById('answerBox');
-        if (!answerBox) return;
-
-        try {
-            quill = new Quill('#answerBox', {
-                theme: 'snow',
-                placeholder: 'Gib hier deinen Text ein...',
-                modules: { toolbar: [['bold', 'italic', 'underline'], [{ 'list': 'ordered' }, { 'list': 'bullet' }], ['clean']] }
-            });
-
-            quill.on('text-change', (delta, oldDelta, source) => {
-                if (source === 'user') {
-                    debouncedSave();
-                }
-            });
-
-            // ADDED: Listen for the extension to send data to load
-            window.addEventListener('loadDataIntoEditor', (event) => {
-                if (quill && event.detail.content) {
-                    quill.root.innerHTML = event.detail.content;
-                    console.log("Loaded data from extension into editor.");
-                }
-            });
-
-        } catch (error) {
-            console.error("Failed to initialize Quill:", error);
-            answerBox.innerHTML = "Fehler beim Laden des Editors.";
-        }
+    function saveToLocal() {
+        if (!quill) return;
+        const htmlContent = quill.root.innerHTML;
+        if (htmlContent === '<p><br></p>' || htmlContent === '') {
+            console.log("Attempted to save empty content. Skipping.");
+            return;
+        }
+        const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
+        const { subId } = getCurrentSubIdAndQuestions();
+        const storageKey = subId
+            ? `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`
+            : `${STORAGE_PREFIX}${assignmentId}`;
+        try {
+            localStorage.setItem(storageKey, htmlContent);
+            console.log(`Text for ${storageKey} saved`);
+            showSaveIndicator();
+        } catch (e) {
+            console.error("Error saving content to localStorage:", e);
+            alert("Fehler beim Speichern. Möglicherweise ist der Speicherplatz voll.");
+        }
+    }
 
     function clearLocalStorage() {
         const keysToRemove = [];
