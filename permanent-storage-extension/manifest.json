@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Allgemeinbildung Permanent Storage",
-  "version": "2.0",
+  "version": "2.2",
   "description": "Saves Quill editor content permanently and allows filtering and exporting.",
   "permissions": [
     "storage",
@@ -14,6 +14,18 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://allgemeinbildung.github.io/textbox/answers.html"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
