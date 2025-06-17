@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Allgemeinbildung Data Exporter",
+  "version": "1.6",
+  "description": "Exports all saved data (questions and answers) from the Allgemeinbildung Textbox application as a single JSON file.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Export Data"
+  }
+}
