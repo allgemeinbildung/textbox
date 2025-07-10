@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Druckansicht</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.4em;
+            padding: 1.4em;
+            margin: 0;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        .lined-content {
+            background-color: #fdfdfa;
+            position: relative;
+            height: calc(22 * 1.4em);
+            padding: 0;
+            overflow: hidden;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent calc(1.4em - 1px),
+                #d2d2d2 calc(1.4em - 1px),
+                #d2d2d2 1.4em
+            ),
+            linear-gradient(
+                to bottom,
+                transparent 0,
+                transparent calc(22 * 1.4em),
+                #fdfdfa calc(22 * 1.4em),
+                #fdfdfa 100%
+            );
+            background-size: 100% 1.4em;
+            background-position: 0 0;
+            background-repeat: repeat-y;
+        }
+        .lined-content:empty::after {
+            content: "Antworten:";
+            font-style: italic;
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 0 5px;
+        }
+        h1, h2, h3, h4, h5, h6, p, li, div, blockquote, pre,
+        .questions-print, .questions-print ol, .questions-print li,
+        .sub-assignment-block, .sub-assignment-block > div,
+        .ql-editor, .ql-editor p, .ql-editor ol, .ql-editor ul, .ql-editor li {
+            line-height: inherit;
+            background-color: transparent !important;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+        h2 { color: #003f5c; margin-bottom: 1.4em; }
+        h3 { color: #2f4b7c; margin-top: 1.4em; margin-bottom: 1.4em; page-break-after: avoid; }
+        p, .ql-editor p, .ql-editor li { margin-top: 0 !important; margin-bottom: 0 !important; }
+        ul, ol, .ql-editor ul, .ql-editor ol {
+            margin-top: 0;
+            margin-bottom: 1.4em;
+            padding-left: 2em;
+        }
+        .questions-print ol {
+            margin-bottom: 1.4em;
+            padding-left: 1.5em;
+        }
+        .questions-print li {
+            margin-bottom: 0.25em;
+        }
+        li { margin-bottom: 0; }
+        hr { border: 0; height: 1px; background-color: #999; margin: 1.4em 0; }
+        .questions-print { margin-top: 0; margin-bottom: 1.4em; }
+        .sub-assignment-block {
+            page-break-inside: avoid;
+            margin-bottom: 1.4em;
+            padding-top: 0.1px;
+        }
+        .sub-assignment-block.new-page { page-break-before: always; margin-top: 0; }
+        strong { font-weight: bold; }
+        em { font-style: italic; }
+        @media print {
+            .sub-assignment-block { page-break-after: always; }
+            .sub-assignment-block:last-child { page-break-after: auto; }
+        }
+    </style>
+</head>
+<body>
+<script>
+(function() {
+    const STORAGE_PREFIX = 'textbox-assignment_';
+    const SUB_STORAGE_PREFIX = 'textbox-sub_';
+    const QUESTIONS_PREFIX = 'textbox-questions_';
+
+    function parseMarkdown(text) {
+        if (!text) return '';
+        text = text.replace(/(\*\*|__)(?=\S)(.*?)(?<=\S)\1/g, '<strong>$2</strong>');
+        text = text.replace(/(\*|_)(?=\S)(.*?)(?<=\S)\1/g, '<em>$2</em>');
+        return text;
+    }
+
+    function getQueryParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const params = {};
+        for (const [key, value] of urlParams.entries()) {
+            if (key === 'subIds' || key.startsWith('question')) {
+                if (!params[key]) {
+                    params[key] = [];
+                }
+                params[key].push(value);
+            } else {
+                params[key] = value;
+            }
+        }
+        return params;
+    }
+
+    function getQueryParam(param) {
+        return getQueryParams()[param];
+    }
+
+    function getQuestionsFromStorage(assignmentId, subId) {
+        const storageKey = `${QUESTIONS_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}${subId}`;
+        const storedQuestions = localStorage.getItem(storageKey);
+        if (storedQuestions) {
+            try {
+                return JSON.parse(storedQuestions);
+            } catch (e) {
+                console.error(`Error parsing questions for ${subId}:`, e);
+            }
+        }
+        return {};
+    }
+
+    function getQuestionsHtmlFromStorage(assignmentId, subId) {
+        const questionsObject = getQuestionsFromStorage(assignmentId, subId);
+        if (Object.keys(questionsObject).length > 0) {
+            let html = '<div class="questions-print">';
+            html += '<ol>';
+            const sortedQuestionKeys = Object.keys(questionsObject).sort((a, b) => {
+                const numA = parseInt(a.replace('question', ''), 10);
+                const numB = parseInt(b.replace('question', ''), 10);
+                return numA - numB;
+            });
+            sortedQuestionKeys.forEach(key => {
+                html += `<li>${parseMarkdown(questionsObject[key])}</li>`;
+            });
+            html += '</ol>';
+            html += '</div>';
+            return html;
+        }
+        return '';
+    }
+
+    function generateAllContent() {
+        const assignmentId = getQueryParam('assignmentId') || 'defaultAssignment';
+        const answerPrefix = `${STORAGE_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
+        const questionPrefix = `${QUESTIONS_PREFIX}${assignmentId}_${SUB_STORAGE_PREFIX}`;
+
+        const subIdSet = new Set();
+        const subIdAnswerMap = new Map();
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith(answerPrefix)) {
+                const subId = key.substring(answerPrefix.length);
+                subIdSet.add(subId);
+                subIdAnswerMap.set(subId, localStorage.getItem(key));
+            } else if (key.startsWith(questionPrefix)) {
+                const subId = key.substring(questionPrefix.length);
+                subIdSet.add(subId);
+            }
+        }
+
+        if (subIdSet.size === 0) {
+            return '';
+        }
+
+        const sortedSubIds = Array.from(subIdSet).sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+        );
+
+        const assignmentSuffix = assignmentId.includes('_') ? assignmentId.substring(assignmentId.indexOf('_') + 1) : assignmentId;
+
+        let allContent = `<h2>Aufgabe: ${assignmentSuffix}</h2>`;
+        let contentAdded = false;
+
+        sortedSubIds.forEach((subId, index) => {
+            const answerContent = subIdAnswerMap.get(subId);
+            const questionsHtml = getQuestionsHtmlFromStorage(assignmentId, subId);
+            if (questionsHtml || answerContent) {
+                contentAdded = true;
+                const blockClass = 'sub-assignment-block' + (index > 0 ? ' new-page' : '');
+                allContent += `<div class="${blockClass}">`;
+                allContent += `<h3>${subId}</h3>`;
+                if (questionsHtml) { allContent += questionsHtml; }
+                if (answerContent) {
+                    allContent += `<div class="lined-content">${answerContent}</div>`;
+                } else {
+                    allContent += `<div class="lined-content"><p><em>Antworten:</em></p></div>`;
+                }
+                allContent += `</div>`;
+            }
+        });
+
+        return contentAdded ? allContent : '';
+    }
+
+    function fillPage() {
+        const content = generateAllContent();
+        if (!content) {
+            document.body.textContent = 'Keine Daten zum Drucken gefunden.';
+            return;
+        }
+        document.body.innerHTML = content;
+
+        const lineHeight = '1.4em';
+        const numberOfLines = 22;
+        const blocks = document.querySelectorAll('.sub-assignment-block');
+        blocks.forEach(block => {
+            const lined = block.querySelector('.lined-content');
+            if (lined) {
+                if (lined.innerHTML.trim() === '' || lined.innerHTML === '<p><br></p>') {
+                    lined.innerHTML = '<p><em>Antworten:</em></p>';
+                }
+                const contentElements = lined.querySelectorAll('p, div');
+                contentElements.forEach(el => {
+                    el.style.position = 'relative';
+                    el.style.zIndex = '1';
+                });
+                lined.style.height = `calc(${numberOfLines} * ${lineHeight})`;
+                lined.style.maxHeight = `calc(${numberOfLines} * ${lineHeight})`;
+            }
+        });
+
+        setTimeout(() => window.print(), 500);
+    }
+
+    window.addEventListener('DOMContentLoaded', fillPage);
+})();
+</script>
+</body>
+</html>
