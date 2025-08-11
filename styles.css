@@ -362,7 +362,7 @@ summary::after {
 }
 
 .questions-container ol li {
-  line-height: 1.1;
+  line-height: 1.2;
   margin-bottom: 0.3em;
   font-size: 13px; /* <--- Add this line */
 }
@@ -395,3 +395,4 @@ summary::after {
     border: 1px solid var(--border-color);
 
 }
+
