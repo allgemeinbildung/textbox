@@ -356,30 +356,16 @@ summary::after {
     margin-bottom: 15px;
 }
 
-/* NEW Rules for Hanging Indent */
 .questions-container ol {
-    list-style: none; /* Remove default numbering */
-    padding: 0;
-    margin: 0;
-    counter-reset: questions-counter; /* Prepare for custom numbers */
+    padding-left: 0;
+    list-style-position: inside;
 }
 
 .questions-container ol li {
-    display: flex; /* Use flexbox for alignment */
-    align-items: baseline; /* Align number and text on their baseline */
-    counter-increment: questions-counter; /* Count each item */
-    line-height: 1.4;
-    margin-bottom: 0.5em; /* Space between questions */
-    font-size: 14px;
+  line-height: 1.1;
+  margin-bottom: 0.5em;
+  font-size: 13px; /* <--- Add this line */
 }
-
-.questions-container ol li::before {
-    content: counter(questions-counter) "."; /* Add the number */
-    font-weight: bold;
-    min-width: 1.5em; /* Reserve space for the number, allows text to align */
-    padding-right: 0.5em; /* Space between number and text */
-}
-/* End NEW Rules */
 
 .questions-container div {
     margin-bottom: 5px;
