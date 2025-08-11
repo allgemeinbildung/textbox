@@ -215,17 +215,56 @@
     // --- PAGE INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", function() {
         console.log(`DOM Content Loaded. Extension active: ${isExtensionActive()}`);
-        quill = new Quill('#answerBox', {
-            theme: 'snow',
-            placeholder: 'Gib hier deinen Text ein...',
-            modules: { toolbar: [ ['bold', 'italic', 'underline'], [{ 'list': 'ordered' }, { 'list': 'bullet' }], ['clean'] ] }
-        });
+        quill = new Quill('#answerBox', {
+                    theme: 'snow',
+                    placeholder: 'Gib hier deinen Text ein...',
+                    modules: {
+                        // Toolbar without list buttons
+                        toolbar: [
+                            ['bold', 'italic', 'underline'],
+                            ['clean']
+                        ],
+                        // Keyboard module to disable auto-formatting
+                        keyboard: {
+                            bindings: {
+                                'list autofill override': {
+                                    key: ' ',
+                                    prefix: /^\s*([*]|\d+\.)$/,
+                                    handler: function() {
+                                        return true; // Prevents list creation, allows space
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
         
-        // Add paste event listener to deactivate pasting
+        // Add paste event listener to handle images but block text
         if (quill.root) {
             quill.root.addEventListener('paste', function(e) {
                 e.preventDefault();
-                alert("Einfügen von Inhalten ist in diesem Editor deaktiviert.");
+                const items = (e.clipboardData || window.clipboardData).items;
+                let imageFound = false;
+
+                for (const item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        imageFound = true;
+                        const blob = item.getAsFile();
+                        if (!blob) continue;
+
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const base64Image = event.target.result;
+                            const range = quill.getSelection(true);
+                            quill.insertEmbed(range.index, 'image', base64Image);
+                        };
+                        reader.readAsDataURL(blob);
+                    }
+                }
+
+                if (!imageFound) {
+                    alert("Das Einfügen von Text ist deaktiviert. Sie können nur Bilder einfügen.");
+                }
             });
         }
 
@@ -254,5 +293,6 @@
         printAllSubIdsBtn.addEventListener('click', printAllSubIdsForAssignment);
         document.querySelector('.button-container').appendChild(printAllSubIdsBtn);
     });
+
 
 })();
