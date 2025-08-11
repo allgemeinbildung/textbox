@@ -359,7 +359,7 @@ summary::after {
 .questions-container ol li {
   line-height: 1.1;
   margin-bottom: 0.3em;
-  font-size: 14px; /* <--- Add this line */
+  font-size: 13px; /* <--- Add this line */
 }
 
 .questions-container div {
@@ -390,3 +390,4 @@ summary::after {
     border: 1px solid var(--border-color);
 
 }
+
